@@ -1,0 +1,518 @@
+#include <dumper/Dump.H>
+
+/*
+    Arbitrary heap pointer check... TODO: Improve this?
+*/
+#define IS_HEAP_PTR(ptr) ( (DWORD64)ptr > 0x1000000000 && (DWORD64)ptr < 0x4FFFFFFFFFFF )
+
+extern
+VOID
+OutputFormat(
+    _In_    LPCWSTR lpFormat,
+    ...
+);
+
+NTSTATUS
+LinearSearchForClass(
+    _In_    HANDLE      hRoblox,
+    _In_    PVOID       pvStart,
+    _In_    CHAR*       szClassName,
+    _In_    DWORD       dwMaxSearch,
+    _In_    DWORD       dwAlignment,
+    _Out_   DWORD*      pdwOffsetOut
+)
+{
+    PVOID   pvAddress   = 0;
+    DWORD   dwSearch    = 0;
+    BOOL    bRet        = FALSE;
+
+    if ( !hRoblox || !pvStart || !szClassName || !pdwOffsetOut )
+    {
+        return STATUS_INVALID_PARAMETER;
+    }
+
+    if ( dwAlignment == 0 || dwMaxSearch == 0 )
+    {
+        return STATUS_INVALID_PARAMETER;
+    }
+
+    for ( ; dwSearch < ( dwAlignment * dwMaxSearch ); dwSearch += dwAlignment )
+    {
+        bRet = ReadProcessMemory(
+            hRoblox,
+            (LPCVOID) ( (DWORD64) pvStart + dwSearch ),
+            &pvAddress,
+            sizeof( PVOID ),
+            NULL
+        );
+
+        if ( !bRet )
+        {
+            OutputFormat(
+                L"Warning: LinearSearchForClass: ReadProcessMemory failed at %ph because %lu\n",
+                (LPCVOID) ( (DWORD64) pvStart + dwSearch ),
+                GetLastError()
+            );
+
+            continue;
+        }
+
+        if ( IsClass(
+            hRoblox,
+            pvAddress,
+            szClassName
+        ) )
+        {
+            break;
+        }
+    }
+
+    if ( dwSearch == ( dwAlignment * dwMaxSearch ) )
+    {
+        return STATUS_UNSUCCESSFUL;
+    }
+
+    *pdwOffsetOut = dwSearch;
+
+    return STATUS_SUCCESS;
+}
+
+_Success_( return == STATUS_SUCCESS )
+NTSTATUS
+LinearSearchWorkspace(
+    _In_                                        HANDLE  hRoblox,
+    _In_                                        PVOID   pvDataModel,
+    _Outptr_result_nullonfailure_   __restrict  PVOID*  pvOutWorkspace
+)
+{
+    PVOID   pvAddress   = 0;
+    
+    DWORD   dwSearch    = 0;
+    DWORD   dwMaxSearch = sizeof( PVOID ) * 50;
+
+    BOOL    bRet        = FALSE;
+
+    if ( !hRoblox || !pvDataModel || !pvOutWorkspace )
+    {
+        return STATUS_INVALID_PARAMETER;
+    }
+
+    for ( ; dwSearch < dwMaxSearch; dwSearch += sizeof( PVOID ) )
+    {
+        bRet = ReadProcessMemory(
+            hRoblox,
+            (LPCVOID) ( (DWORD64) pvDataModel + dwSearch ),
+            &pvAddress,
+            sizeof( PVOID ),
+            NULL
+        );
+
+        if ( !bRet )
+        {
+            OutputFormat(
+                L"Warning: LinearSearchWorkspace: ReadProcessMemory failed at %ph because %lu\n",
+                (LPCVOID) ( (DWORD64) pvDataModel + dwSearch ),
+                GetLastError()
+            );
+
+            continue;
+        }
+
+        if ( IsClass(
+            hRoblox,
+            pvAddress,
+            ".?AVWorkspace@RBX@@"
+        ) )
+        {
+            break;
+        }
+    }
+
+    if ( dwSearch == dwMaxSearch )
+    {
+        return STATUS_UNSUCCESSFUL;
+    }
+
+    *pvOutWorkspace = pvAddress;
+
+    return STATUS_SUCCESS;
+}
+
+_Success_( return == STATUS_SUCCESS )
+NTSTATUS
+LinearSearchForString(
+    _In_    HANDLE      hRoblox,
+    _In_    PVOID       pvStart,
+    _In_    CHAR*       szString,
+    _In_    DWORD       dwMaxSearch,
+    _In_    DWORD       dwAlignment,
+    _Out_   DWORD*      pdwOffsetOut
+)
+{
+    if ( !hRoblox || !pvStart || !szString )
+    {
+        return STATUS_INVALID_PARAMETER;
+    }
+
+    if ( !pdwOffsetOut )
+    {
+        return STATUS_INVALID_PARAMETER;
+    }
+
+    /*
+        Roblox uses std::strings for its names.
+
+        I'm not going to implement scanning for a
+        string longer than 15 characters, because
+        then std::string uses a heap allocation.
+    */
+
+    if ( strlen( szString ) > 15 )
+    {
+        return STATUS_INVALID_PARAMETER;
+    }
+
+    for ( DWORD dwSearch = 0; dwSearch < ( dwAlignment * dwMaxSearch ); dwSearch += dwAlignment )
+    {
+        PVOID   pvAddress       = 0;
+        CHAR    szBuffer[16]    = { 0 };
+
+        if ( !ReadProcessMemory(
+            hRoblox,
+            (LPCVOID) ( (DWORD64) pvStart + dwSearch ),
+            &pvAddress,
+            sizeof( PVOID ),
+            NULL
+        ) )
+        {
+            OutputFormat(
+                L"Warning: LinearSearchForString: ReadProcessMemory failed at %ph because %lu\n",
+                (LPCVOID) ( (DWORD64) pvStart + dwSearch ),
+                GetLastError()
+            );
+
+            continue;
+        }
+
+        if ( !pvAddress )
+        {
+            continue;
+        }
+
+        if ( !IS_HEAP_PTR(pvAddress) )
+        {
+            continue;
+        }
+
+        if ( !ReadProcessMemory(
+            hRoblox,
+            (LPCVOID) pvAddress,
+            &szBuffer,
+            sizeof( szBuffer ) - 1,
+            NULL
+        ) )
+        {
+            OutputFormat(
+                L"Warning: LinearSearchForString: ReadProcessMemory failed at %ph because %lu\n",
+                (LPCVOID) pvAddress,
+                GetLastError()
+            );
+
+            continue;
+        }
+
+        if ( strcmp(
+            szBuffer,
+            szString
+        ) == 0 )
+        {
+            *pdwOffsetOut = dwSearch;
+
+            return STATUS_SUCCESS;
+        }
+    }
+
+    return STATUS_UNSUCCESSFUL;
+}
+
+_Success_( return != 0 )
+BOOL
+GetAddresses(
+    _In_    HANDLE  hRoblox,
+    _In_    BOOL    bFastRenderViewScan,
+    _Out_   PVOID*  ppvRenderView,
+    _Out_   PVOID*  ppvDataModel,
+    _Out_   PVOID*  ppvWorkspace
+)
+{
+    NTSTATUS    lStatus         = STATUS_UNSUCCESSFUL;
+
+    PVOID       pvRenderView    = 0x0;
+    PVOID       pvDataModel     = 0x0;
+    PVOID       pvWorkspace     = 0x0;
+
+    lStatus = RobloxGetRenderView(
+        hRoblox,
+        bFastRenderViewScan,
+        &pvRenderView
+    );
+
+    if ( !NT_SUCCESS( lStatus ) || !pvRenderView )
+    {
+        OutputFormat(
+            L"Error: Failed to get RenderView address (0x%08X).\n",
+            lStatus
+        );
+
+        return FALSE;
+    }
+
+    OutputFormat(
+        L"Ok: Found RenderView at address 0x%p.\n",
+        pvRenderView
+    );
+
+    lStatus = RobloxGetDataModel(
+        hRoblox,
+        pvRenderView,
+        &pvDataModel
+    );
+
+    if ( !NT_SUCCESS( lStatus ) || !pvDataModel )
+    {
+        OutputFormat(
+            L"Error: Failed to get DataModel address (0x%08X).\n",
+            lStatus
+        );
+
+        return FALSE;
+    }
+
+    OutputFormat(
+        L"Ok: Found DataModel at address 0x%p.\n",
+        pvDataModel
+    );
+
+    lStatus = LinearSearchWorkspace(
+        hRoblox,
+        pvDataModel,
+        &pvWorkspace
+    );
+
+    if ( !NT_SUCCESS( lStatus ) || !pvWorkspace )
+    {
+        OutputFormat(
+            L"Error: Failed to get Workspace address (0x%08X).\n",
+            lStatus
+        );
+
+        return FALSE;
+    }
+
+    OutputFormat(
+        L"Ok: Found Workspace at address 0x%p.\n",
+        pvWorkspace
+    );
+
+    *ppvRenderView  = pvRenderView;
+    *ppvDataModel   = pvDataModel;
+    *ppvWorkspace   = pvWorkspace;
+
+    return TRUE;
+}
+
+_Success_( return != 0 )
+BOOL
+DumpOffsets(
+    _In_    HANDLE  hRoblox,
+    _In_    BOOL    bFastRenderViewScan
+)
+{
+    if ( !hRoblox || hRoblox == INVALID_HANDLE_VALUE )
+    {
+        return FALSE;
+    }
+
+    NTSTATUS    lStatus     = STATUS_UNSUCCESSFUL;
+    BOOL        bRet        = FALSE;
+
+    PVOID   pvRenderView                    = 0x0;
+    PVOID   pvDataModel                     = 0x0;
+    PVOID   pvWorkspace                     = 0x0;
+
+    PVOID   pvClassDescriptor               = 0x0;
+    PVOID   pvVisualEngine                  = 0x0;
+
+    DWORD   dwParentOffset                  = 0x0;
+    DWORD   dwClassDescriptorOffset         = 0x0;
+    DWORD   dwClassDescriptorNameOffset     = 0x0;
+    DWORD   dwInstanceNameOffset            = 0x0;
+    DWORD   dwChildrenOffset                = 0x0;
+    DWORD   dwViewMatrixOffset              = 0x0;
+
+    bRet = GetAddresses(
+        hRoblox,
+        bFastRenderViewScan,
+        &pvRenderView,
+        &pvDataModel,
+        &pvWorkspace
+    );
+
+    if ( !bRet )
+    {
+        goto lblFail;
+    }
+
+    /*
+        Instance->Parent
+    */
+
+    lStatus = LinearSearchForClass(
+        hRoblox,
+        pvWorkspace,
+        ".?AVDataModel@RBX@@",
+        50,
+        sizeof( PVOID ),
+        &dwParentOffset
+    );
+
+    if ( !NT_SUCCESS( lStatus ) || !dwParentOffset )
+    {
+        OutputFormat(
+            L"Warning: Failed to find Instance->Parent offset (0x%08X).\n",
+            lStatus
+        );
+    }
+
+    /*
+        Instance->ClassDescriptor
+    */
+
+    lStatus = LinearSearchForClass(
+        hRoblox,
+        pvWorkspace,
+        ".?AVClassDescriptor@Reflection@RBX@@",
+        50,
+        sizeof( PVOID ),
+        &dwClassDescriptorOffset
+    );
+
+    if ( !NT_SUCCESS( lStatus ) || !dwClassDescriptorOffset )
+    {
+        OutputFormat(
+            L"Warning: Failed to find Instance->ClassDescriptor offset (0x%08X).\n",
+            lStatus
+        );
+    }
+
+    /*
+        Instance->ClassDescriptor->Name
+    */
+
+    if ( !dwClassDescriptorOffset )
+    {
+        OutputFormat(
+            L"Warning: Skipping ClassDescriptor->Name offset search due to missing ClassDescriptor offset.\n"
+        );
+
+        goto lblSkipClassDescriptorName;
+    }
+
+    bRet = ReadProcessMemory(
+        hRoblox,
+        (LPCVOID) ( (DWORD64) pvWorkspace + dwClassDescriptorOffset ),
+        &pvClassDescriptor,
+        sizeof( PVOID ),
+        NULL
+    );
+
+    if ( !bRet || !pvClassDescriptor )
+    {
+        OutputFormat(
+            L"Warning: Skipping ClassDescriptor->Name offset search due to failed read of ClassDescriptor pointer (%lu).\n",
+            GetLastError()
+        );
+        
+        goto lblSkipClassDescriptorName;
+    }
+
+    lStatus = LinearSearchForString(
+        hRoblox,
+        pvClassDescriptor,
+        "Workspace",
+        50,
+        sizeof( PVOID ),
+        &dwClassDescriptorNameOffset
+    );
+
+    if ( !NT_SUCCESS( lStatus ) || !dwClassDescriptorNameOffset )
+    {
+        OutputFormat(
+            L"Warning: Failed to find ClassDescriptor->Name offset (0x%08X).\n",
+            lStatus
+        );
+    }
+
+lblSkipClassDescriptorName:
+    
+    /*
+        Instance->Name
+    */
+
+    lStatus = LinearSearchForString(
+        hRoblox,
+        pvWorkspace,
+        "Workspace",
+        50,
+        sizeof( PVOID ),
+        &dwInstanceNameOffset
+    );
+
+    if ( !NT_SUCCESS( lStatus ) || !dwInstanceNameOffset )
+    {
+        OutputFormat(
+            L"Warning: Failed to find Instance->Name offset (0x%08X).\n",
+            lStatus
+        );
+    }
+
+    OutputFormat(
+        L"\n============================== OFFSETS ==============================\n\n"
+    );
+
+    OutputFormat(
+        L"#define INSTANCE_PARENT_PTR_OFFSET             0x%lx\n",
+        dwParentOffset
+    );
+
+    OutputFormat(
+        L"#define INSTANCE_CLASS_DESCRIPTOR_PTR_OFFSET   0x%lx\n",
+        dwClassDescriptorOffset
+    );
+
+    OutputFormat(
+        L"#define CLASS_DESCRIPTOR_NAME_PTR_OFFSET       0x%lx\n",
+        dwClassDescriptorNameOffset
+    );
+
+    OutputFormat(
+        L"#define INSTANCE_NAME_PTR_OFFSET               0x%lx\n",
+        dwInstanceNameOffset
+    );
+
+    OutputFormat(
+        L"\n=====================================================================\n"
+    );
+
+    bRet = TRUE;
+
+    goto lblExit;
+
+lblFail:
+
+    bRet = FALSE;
+
+lblExit:
+
+    return bRet;
+}

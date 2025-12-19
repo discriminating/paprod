@@ -1,0 +1,29 @@
+#pragma once
+
+#include <windows.h>
+#pragma warning(push)
+#pragma warning(disable:4005)
+#include <ntstatus.h>
+#pragma warning(pop)
+
+#include <rtti/RunTimeTypeInformation.H>
+
+#define ARBITRARY_HEAP_BARRIER	0x4FFFFFFFFFFF
+#define PAGE_SIZE               0x1000
+
+_Success_( return == STATUS_SUCCESS )
+NTSTATUS
+WINAPI
+RobloxGetRenderView(
+    _In_                                        HANDLE      hRoblox,
+    _In_                                        BOOL        bFastScan,
+    _Outptr_result_nullonfailure_   __restrict  PVOID*      ppvRenderViewOut
+);
+
+_Success_( return == STATUS_SUCCESS )
+NTSTATUS
+RobloxGetDataModel(
+    _In_                                        HANDLE      hRoblox,
+    _In_                                        PVOID       pvRenderView,
+    _Outptr_result_nullonfailure_   __restrict  PVOID*      ppvDataModelOut
+);
