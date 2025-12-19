@@ -33,6 +33,16 @@ IsClass(
         return FALSE;
     }
 
+    if ( !pVTable )
+    {
+        return FALSE;
+    }
+
+    if ( (DWORD64)pVTable % sizeof( PVOID ) != 0 )
+    {
+        return FALSE;
+    }
+
     if ( !ReadProcessMemory(
         hRoblox,
         (PVOID)( (DWORD64)pVTable - sizeof( PVOID ) ),
@@ -44,6 +54,11 @@ IsClass(
         return FALSE;
     }
 
+    if ( (DWORD64) pVTable > 0x00007FFFFFFFFFFF )
+    {
+        return FALSE;
+    }
+
     if ( !ReadProcessMemory(
         hRoblox,
         pRTTICompleteObjectLocator,
@@ -51,6 +66,11 @@ IsClass(
         sizeof( sRTTI ),
         NULL
     ) )
+    {
+        return FALSE;
+    }
+
+    if ( sRTTI.dwSignature != 1 )
     {
         return FALSE;
     }

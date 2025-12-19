@@ -22,6 +22,9 @@ RobloxGetRenderView(
     DWORD64                     dwAddress   = PAGE_SIZE;
     MEMORY_BASIC_INFORMATION    mbiInfo     = { 0 };
 
+    PBYTE                       pBuffer     = NULL;
+    SIZE_T                      szBufferSz  = 0;
+
     if ( !hRoblox || hRoblox == INVALID_HANDLE_VALUE || !ppvRenderViewOut )
     {
         return STATUS_INVALID_PARAMETER;
@@ -38,7 +41,6 @@ RobloxGetRenderView(
         SIZE_T      szBytesReturned     = 0;
         SIZE_T      szBytesRead         = 0;
         BOOL        bResult             = FALSE;
-        PBYTE       pBuffer             = NULL;
 
         szBytesReturned = VirtualQueryEx(
             hRoblox,
@@ -66,16 +68,32 @@ RobloxGetRenderView(
             continue;
         }
 
-        pBuffer = (PBYTE)VirtualAlloc(
-            NULL,
-            mbiInfo.RegionSize,
-            MEM_COMMIT | MEM_RESERVE,
-            PAGE_READWRITE
-        );
-
-        if ( !pBuffer )
+        if ( mbiInfo.RegionSize > szBufferSz )
         {
-            return STATUS_NO_MEMORY;
+            if ( pBuffer )
+            {
+                (VOID)VirtualFree(
+                    pBuffer,
+                    0,
+                    MEM_RELEASE
+                );
+
+                pBuffer = NULL;
+            }
+
+            pBuffer = (PBYTE)VirtualAlloc(
+                NULL,
+                mbiInfo.RegionSize,
+                MEM_COMMIT | MEM_RESERVE,
+                PAGE_READWRITE
+            );
+
+            if ( !pBuffer )
+            {
+                return STATUS_NO_MEMORY;
+            }
+
+            szBufferSz = mbiInfo.RegionSize;
         }
 
 #pragma warning(push)
@@ -93,12 +111,6 @@ RobloxGetRenderView(
              ( szBytesRead != mbiInfo.RegionSize &&
                GetLastError() != ERROR_PARTIAL_COPY ) )
         {
-            (VOID)VirtualFree(
-                pBuffer,
-                0,
-                MEM_RELEASE
-            );
-
             dwAddress += mbiInfo.RegionSize;
 
             continue;
@@ -162,22 +174,28 @@ RobloxGetRenderView(
 
             *ppvRenderViewOut = (PVOID)( dwAddress + i );
 
-            (VOID)VirtualFree(
-                pBuffer,
-                0,
-                MEM_RELEASE
-            );
+            if ( pBuffer )
+            {
+                (VOID) VirtualFree(
+                    pBuffer,
+                    0,
+                    MEM_RELEASE
+                );
+            }
 
             return STATUS_SUCCESS;
         }
 
-        (VOID)VirtualFree(
+        dwAddress += mbiInfo.RegionSize;
+    }
+
+    if ( pBuffer )
+    {
+        (VOID) VirtualFree(
             pBuffer,
             0,
             MEM_RELEASE
         );
-
-        dwAddress += mbiInfo.RegionSize;
     }
 
     *ppvRenderViewOut = NULL;

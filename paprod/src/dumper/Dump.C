@@ -7,11 +7,6 @@ Date:       18 December 2025
 
 #include <dumper/Dump.H>
 
-/*
-    Arbitrary heap pointer check... TODO: Improve this?
-*/
-#define IS_HEAP_PTR(ptr) ( (DWORD64)ptr > 0x1000000000 && (DWORD64)ptr < 0x4FFFFFFFFFFF )
-
 extern
 VOID
 OutputFormat(

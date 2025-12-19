@@ -315,6 +315,29 @@ WindowProcedureW(
 
         }
 
+        case WM_SIZE:
+        {
+            if ( g_hRichEditOutput )
+            {
+                RECT    rcClient    = { 0 };
+
+                GetClientRect(
+                    hWnd,
+                    &rcClient
+                );
+
+                SetWindowPos(
+                    g_hRichEditOutput,
+                    NULL,
+                    20,
+                    110,
+                    rcClient.right - 40,
+                    rcClient.bottom - 130,
+                    SWP_NOZORDER
+                );
+            }
+        }
+
         default:
         {
             return DefWindowProcW(
