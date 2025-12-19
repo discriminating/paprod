@@ -1,3 +1,10 @@
+/*
+File:       Dump.C
+Purpose:    Functions to dump Roblox offsets
+Author:     @discriminating
+Date:       18 December 2025
+*/
+
 #include <dumper/Dump.H>
 
 /*

@@ -1,6 +1,6 @@
 /*
 File:       InitDump.C
-Purpose:    Functions to dump Roblox offsets
+Purpose:    Initialization of dump process
 Author:     @discriminating
 Date:       18 December 2025
 */
