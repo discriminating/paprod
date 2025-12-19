@@ -2,9 +2,9 @@
 
 BOOL
 IsClass(
-    _In_    HANDLE          hRoblox,
-    _In_    VOID*           pVirtualAddress,
-    _In_    CONST CHAR*     szClassName
+    _In_        HANDLE          hRoblox,
+    _In_        VOID*           pVirtualAddress,
+    _In_z_      CONST CHAR*     szClassName
 )
 {
     if ( !hRoblox || !pVirtualAddress || !szClassName )

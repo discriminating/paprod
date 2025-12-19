@@ -21,12 +21,12 @@ OutputFormat(
 
 NTSTATUS
 LinearSearchForClass(
-    _In_    HANDLE      hRoblox,
-    _In_    PVOID       pvStart,
-    _In_    CHAR*       szClassName,
-    _In_    DWORD       dwMaxSearch,
-    _In_    DWORD       dwAlignment,
-    _Out_   DWORD*      pdwOffsetOut
+    _In_        HANDLE      hRoblox,
+    _In_        PVOID       pvStart,
+    _In_z_      CHAR*       szClassName,
+    _In_        DWORD       dwMaxSearch,
+    _In_        DWORD       dwAlignment,
+    _Out_       DWORD*      pdwOffsetOut
 )
 {
     PVOID   pvAddress   = 0;
@@ -148,12 +148,12 @@ LinearSearchWorkspace(
 _Success_( return == STATUS_SUCCESS )
 NTSTATUS
 LinearSearchForString(
-    _In_    HANDLE      hRoblox,
-    _In_    PVOID       pvStart,
-    _In_    CHAR*       szString,
-    _In_    DWORD       dwMaxSearch,
-    _In_    DWORD       dwAlignment,
-    _Out_   DWORD*      pdwOffsetOut
+    _In_        HANDLE      hRoblox,
+    _In_        PVOID       pvStart,
+    _In_z_      CHAR*       szString,
+    _In_        DWORD       dwMaxSearch,
+    _In_        DWORD       dwAlignment,
+    _Out_       DWORD*      pdwOffsetOut
 )
 {
     if ( !hRoblox || !pvStart || !szString )
@@ -235,6 +235,219 @@ LinearSearchForString(
         {
             *pdwOffsetOut = dwSearch;
 
+            return STATUS_SUCCESS;
+        }
+    }
+
+    return STATUS_UNSUCCESSFUL;
+}
+
+_Success_( return == STATUS_SUCCESS )
+NTSTATUS
+LinearSearchForChildren(
+    _In_    HANDLE      hRoblox,
+    _In_    PVOID       pvStart,
+    _In_    DWORD       dwMaxSearch,
+    _In_    DWORD       dwParentOffset,
+    _Out_   DWORD*      pdwOffsetOut
+)
+{
+    if ( !hRoblox || !pvStart || !pdwOffsetOut )
+    {
+        return STATUS_INVALID_PARAMETER;
+    }
+
+    for ( DWORD dwSearch = 0; dwSearch < ( sizeof( PVOID ) * dwMaxSearch ); dwSearch += sizeof( PVOID ) )
+    {
+        NTSTATUS    lStatus         = STATUS_UNSUCCESSFUL;
+
+        PVOID       pvAddress       = 0;
+        
+        PVOID       pvChild         = NULL;
+        PVOID       pvChildrenPtr   = NULL;
+        PVOID       pvListStart     = NULL;
+        PVOID       pvListEnd       = NULL;
+        PVOID       pChildrenBuff   = NULL;
+
+        DWORD       dwChildCount    = 0;
+
+        BOOL        bRet            = FALSE;
+        BOOL        bOkay           = FALSE;
+
+        bRet = ReadProcessMemory(
+            hRoblox,
+            (LPCVOID) ( (DWORD64)pvStart + dwSearch ),
+            &pvAddress,
+            sizeof( PVOID ),
+            NULL
+        );
+
+        if ( !bRet )
+        {
+            OutputFormat(
+                L"Warning: LinearSearchForChildren: ReadProcessMemory failed at %ph because %lu\n",
+                (LPCVOID) ( (DWORD64)pvStart + dwSearch ),
+                GetLastError()
+            );
+
+            continue;
+        }
+
+        if ( !IS_HEAP_PTR(pvAddress) )
+        {
+            continue;
+        }
+
+        /*
+            Structure:
+        
+            RBX::Instance
+             - xxx
+             - xxx
+             - Pointer children                 (PVOID)
+                - Pointer to start of list      (PVOID)
+                    - Ptr to child 1            (PVOID)
+                    - Ptr to child 1 deleter    (PVOID)
+                    - Ptr to child 2            (PVOID)
+                    - Ptr to child 2 deleter    (PVOID)
+                    ...
+                - Pointer to end of list        (PVOID)
+        */
+
+        bRet = ReadProcessMemory(
+            hRoblox,
+            (LPCVOID)( (DWORD64)pvStart + dwSearch ),
+            &pvChildrenPtr,
+            sizeof( PVOID ),
+            NULL
+        );
+
+        if ( !bRet )
+        {
+            OutputFormat(
+                L"Warning: LinearSearchForChildren: ReadProcessMemory for children ptr failed at %ph because %lu\n",
+                (LPCVOID) ( (DWORD64)pvStart + dwSearch ),
+                GetLastError()
+            );
+
+            continue;
+        }
+
+        if ( !IS_HEAP_PTR( pvChildrenPtr ) )
+        {
+            continue;
+        }
+
+        bRet = ReadProcessMemory(
+            hRoblox,
+            (LPCVOID)( (DWORD64)pvChildrenPtr ),
+            &pvListStart,
+            sizeof( PVOID ),
+            NULL
+        );
+
+        if ( !bRet )
+        {
+            OutputFormat(
+                L"Warning: LinearSearchForChildren: ReadProcessMemory for list start failed at %ph because %lu\n",
+                (LPCVOID)( (DWORD64)pvChildrenPtr ),
+                GetLastError()
+            );
+
+            continue;
+        }
+
+        if ( !IS_HEAP_PTR( pvListStart ) )
+        {
+            continue;
+        }
+
+        bRet = ReadProcessMemory(
+            hRoblox,
+            (LPCVOID)( (DWORD64)pvChildrenPtr + sizeof( PVOID ) ),
+            &pvListEnd,
+            sizeof( PVOID ),
+            NULL
+        );
+
+        if ( !bRet )
+        {
+            OutputFormat(
+                L"Warning: LinearSearchForChildren: ReadProcessMemory for list end failed at %ph because %lu\n",
+                (LPCVOID) ( (DWORD64) pvChildrenPtr + sizeof(PVOID) ),
+                GetLastError()
+            );
+
+            continue;
+        }
+
+        if ( !IS_HEAP_PTR( pvListEnd ) )
+        {
+            continue;
+        }
+
+        if ( pvListStart >= pvListEnd )
+        {
+            continue;
+        }
+
+        /*
+            Loop through the children and check
+            if it's a valid Roblox class, and
+            if it's Parent offsets point back
+            to this Node.
+        */
+
+        dwChildCount = (DWORD) ( (DWORD64) pvListEnd - (DWORD64) pvListStart ) / ( sizeof( PVOID ) * 2 );
+
+        if ( dwChildCount < 0 )
+        {
+            continue;
+        }
+
+        lStatus = RobloxBatchGetChildren(
+            hRoblox,
+            pvListStart,
+            &pChildrenBuff,
+            dwChildCount
+        );
+
+        if ( !NT_SUCCESS( lStatus ) || !pChildrenBuff )
+        {
+            OutputFormat(
+                L"Warning: LinearSearchForChildren: RobloxBatchGetChildren failed for children at %ph\n",
+                (LPCVOID)pvListStart
+            );
+
+            continue;
+        }
+
+        bOkay = TRUE;
+
+        for ( DWORD i = 0; i < dwChildCount; i++ )
+        {
+            pvChild = *(PVOID*) ( (DWORD64) pChildrenBuff + ( i * sizeof( PVOID ) * 2 ) );
+
+            if ( !pvChild )
+            {
+                continue;
+            }
+
+            if ( !IsRobloxClass(
+                hRoblox,
+                pvChild
+            ) )
+            {
+                bOkay = FALSE;
+
+                break;
+            }
+        }
+
+        if ( bOkay )
+        {
+            *pdwOffsetOut = dwSearch;
+            
             return STATUS_SUCCESS;
         }
     }
@@ -483,6 +696,26 @@ lblSkipClassDescriptorName:
         );
     }
 
+    /*
+        Instance->Children
+    */
+
+    lStatus = LinearSearchForChildren(
+        hRoblox,
+        pvWorkspace,
+        50,
+        dwParentOffset,
+        &dwChildrenOffset
+    );
+
+    if ( !NT_SUCCESS( lStatus ) || !dwChildrenOffset )
+    {
+        OutputFormat(
+            L"Warning: Failed to find Instance->Children offset (0x%08X).\n",
+            lStatus
+        );
+    }
+
     OutputFormat(
         L"\n============================== OFFSETS ==============================\n\n"
     );
@@ -505,6 +738,11 @@ lblSkipClassDescriptorName:
     OutputFormat(
         L"#define INSTANCE_NAME_PTR_OFFSET               0x%lx\n",
         dwInstanceNameOffset
+    );
+
+    OutputFormat(
+        L"#define INSTANCE_CHILDREN_PTR_OFFSET           0x%lx\n",
+        dwChildrenOffset
     );
 
     OutputFormat(

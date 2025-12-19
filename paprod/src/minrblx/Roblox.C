@@ -334,3 +334,57 @@ lblRGDMSearch:
 
     return STATUS_SUCCESS;
 }
+
+_Must_inspect_result_
+NTSTATUS
+RobloxBatchGetChildren(
+    _In_    HANDLE  hRoblox,
+    _In_    PVOID   pChildrenStart,
+    _Outptr_result_bytebuffer_maybenull_( dwChildrenAmount * ( sizeof( PVOID ) * 2 ) )
+            PVOID*  ppvChildrenOutBuff,
+    _In_    DWORD   dwChildrenAmount
+)
+{
+    if ( !hRoblox || !pChildrenStart || !ppvChildrenOutBuff || dwChildrenAmount == 0 )
+    {
+        return STATUS_INVALID_PARAMETER;
+    }
+
+    *ppvChildrenOutBuff = NULL;
+
+    PVOID   pChildrenBuff       = NULL;
+    SIZE_T  szChildrenBuffSize  = dwChildrenAmount * ( sizeof( PVOID ) * 2 ); /* Child + Deleter */
+
+    pChildrenBuff = VirtualAlloc(
+        NULL,
+        szChildrenBuffSize,
+        MEM_COMMIT | MEM_RESERVE,
+        PAGE_READWRITE
+    );
+
+    if ( !pChildrenBuff )
+    {
+        return STATUS_NO_MEMORY;
+    }
+
+    if ( !ReadProcessMemory(
+        hRoblox,
+        pChildrenStart,
+        pChildrenBuff,
+        szChildrenBuffSize,
+        NULL
+    ) )
+    {
+        (VOID)VirtualFree(
+            pChildrenBuff,
+            0,
+            MEM_RELEASE
+        );
+        
+        return STATUS_UNSUCCESSFUL;
+    }
+
+    *ppvChildrenOutBuff = pChildrenBuff;
+
+    return STATUS_SUCCESS;
+}
