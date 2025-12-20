@@ -22,8 +22,8 @@ GetProcessIdFromName(
 _Success_( return == STATUS_SUCCESS )
 NTSTATUS
 IsValidPointer(
-    _In_    HANDLE  hRoblox,
-    _In_    PVOID   pVirtualAddress
+    _In_    HANDLE      hRoblox,
+    _In_    PVOID       pVirtualAddress
 );
 
 #define IS_VALID_POINTER( hProcess, pPtr ) \

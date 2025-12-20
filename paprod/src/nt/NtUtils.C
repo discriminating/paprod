@@ -14,16 +14,16 @@ GetProcessIdFromName(
     _Out_   LPDWORD     lpProcessId
 )
 {
-    DWORD                           dwBufferSize = 0;
-    ULONG                           dwSize = 0;
-    NTSTATUS                        lStatus = 0;
-    PVOID                           pBuffer = NULL;
-    BOOL                            bStatus = FALSE;
-    SYSTEM_PROCESS_INFORMATION* psProcessInfo = { 0 };
+    DWORD                           dwBufferSize    = 0;
+    ULONG                           dwSize          = 0;
+    NTSTATUS                        lStatus         = 0;
+    PVOID                           pBuffer         = NULL;
+    BOOL                            bStatus         = FALSE;
+    SYSTEM_PROCESS_INFORMATION*     psProcessInfo   = { 0 };
 
-    if ( lpProcessId == NULL ||
-        lpProcessName == NULL ||
-        lpProcessName[0] == L'\0' )
+    if ( lpProcessId        == NULL     ||
+        lpProcessName       == NULL     ||
+        lpProcessName[0]    == L'\0' )
     {
         return FALSE;
     }
@@ -32,7 +32,7 @@ GetProcessIdFromName(
         Query the size of the buffer needed...
     */
 
-    (VOID) NtQuerySystemInformation(
+    (VOID)NtQuerySystemInformation(
         SystemProcessInformation,
         NULL,
         0,
@@ -43,7 +43,7 @@ GetProcessIdFromName(
     {
         if ( pBuffer )
         {
-            (VOID) VirtualFree(
+            (VOID)VirtualFree(
                 pBuffer,
                 0,
                 MEM_RELEASE
@@ -83,7 +83,7 @@ GetProcessIdFromName(
 
     if ( !NT_SUCCESS( lStatus ) )
     {
-        (VOID) VirtualFree(
+        (VOID)VirtualFree(
             pBuffer,
             0,
             MEM_RELEASE
@@ -92,11 +92,11 @@ GetProcessIdFromName(
         return FALSE;
     }
 
-    psProcessInfo = (SYSTEM_PROCESS_INFORMATION*) pBuffer;
+    psProcessInfo = (SYSTEM_PROCESS_INFORMATION*)pBuffer;
 
     while ( psProcessInfo )
     {
-        if ( !psProcessInfo->ImageName.Buffer ||
+        if ( !psProcessInfo->ImageName.Buffer   ||
             psProcessInfo->ImageName.Length < 0 )
         {
             goto lblNext;
@@ -110,7 +110,7 @@ GetProcessIdFromName(
             goto lblNext;
         }
 
-        *lpProcessId = (DWORD) (DWORD64) psProcessInfo->UniqueProcessId;
+        *lpProcessId = (DWORD)(DWORD64)psProcessInfo->UniqueProcessId;
 
         bStatus = TRUE;
 
@@ -123,10 +123,10 @@ lblNext:
         }
 
         psProcessInfo =
-            (SYSTEM_PROCESS_INFORMATION*) ( (BYTE*) psProcessInfo + psProcessInfo->NextEntryOffset );
+            (SYSTEM_PROCESS_INFORMATION*)( (BYTE*)psProcessInfo + psProcessInfo->NextEntryOffset );
     }
 
-    (VOID) VirtualFree(
+    (VOID)VirtualFree(
         pBuffer,
         0,
         MEM_RELEASE
@@ -138,12 +138,12 @@ lblNext:
 _Success_( return == STATUS_SUCCESS )
 NTSTATUS
 IsValidPointer(
-    _In_    HANDLE  hRoblox,
-    _In_    PVOID   pVirtualAddress
+    _In_    HANDLE      hRoblox,
+    _In_    PVOID       pVirtualAddress
 )
 {
-    MEMORY_BASIC_INFORMATION    mbiInfo = { 0 };
-    SIZE_T                      szBytesReturned = 0;
+    MEMORY_BASIC_INFORMATION    mbiInfo             = { 0 };
+    SIZE_T                      szBytesReturned     = 0;
 
     if ( !hRoblox || !pVirtualAddress )
     {
@@ -178,7 +178,7 @@ IsValidPointer(
         return STATUS_UNSUCCESSFUL;
     }
 
-    if ( ( mbiInfo.Protect & PAGE_GUARD ) ||
+    if ( ( mbiInfo.Protect & PAGE_GUARD )   ||
         ( mbiInfo.Protect & PAGE_NOACCESS ) )
     {
         return STATUS_UNSUCCESSFUL;
