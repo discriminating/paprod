@@ -388,9 +388,7 @@ LinearSearchForChildren(
 
         /*
             Loop through the children and check
-            if it's a valid Roblox class, and
-            if it's Parent offsets point back
-            to this Node.
+            if it's a valid Roblox class.
         */
 
         dwChildCount = (DWORD) ( (DWORD64) pvListEnd - (DWORD64) pvListStart ) / ( sizeof( PVOID ) * 2 );
