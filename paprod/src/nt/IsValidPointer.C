@@ -14,7 +14,7 @@ IsValidPointer(
     _In_    PVOID   pVirtualAddress
 )
 {
-    MEMORY_BASIC_INFORMATION    mbiInfo     = { 0 };
+    MEMORY_BASIC_INFORMATION    mbiInfo             = { 0 };
     SIZE_T                      szBytesReturned     = 0;
 
     if ( !hRoblox || !pVirtualAddress )
