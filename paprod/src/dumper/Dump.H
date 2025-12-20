@@ -2,6 +2,7 @@
 
 #include <windows.h>
 #include <winternl.h>
+#include <math.h>
 #include <minrblx/Roblox.H>
 
 _Success_( return != 0 )

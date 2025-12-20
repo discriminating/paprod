@@ -16,6 +16,11 @@
 #define ARBITRARY_HEAP_BARRIER	0x4FFFFFFFFFFF
 #define PAGE_SIZE               0x1000
 
+typedef struct RBX_ViewMatrix
+{
+	FLOAT fMatrix[4][4];
+} ViewMatrix, *PViewMatrix;
+
 _Success_( return == STATUS_SUCCESS )
 NTSTATUS
 WINAPI

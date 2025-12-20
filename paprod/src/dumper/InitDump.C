@@ -42,14 +42,14 @@ GetRobloxHandle(
     {
         bRet = GetProcessIdFromName(
             L"RobloxPlayerBeta.exe",
-            &dwProcessId
+            (LPDWORD)&dwProcessId
         );
     }
     else
     {
         bRet = GetProcessIdFromName(
             L"RobloxStudioBeta.exe",
-            &dwProcessId
+            (LPDWORD)&dwProcessId
         );
     }
 

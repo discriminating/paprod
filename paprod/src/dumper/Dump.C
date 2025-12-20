@@ -243,7 +243,6 @@ LinearSearchForChildren(
     _In_    HANDLE      hRoblox,
     _In_    PVOID       pvStart,
     _In_    DWORD       dwMaxSearch,
-    _In_    DWORD       dwParentOffset,
     _Out_   DWORD*      pdwOffsetOut
 )
 {
@@ -450,6 +449,88 @@ LinearSearchForChildren(
     return STATUS_UNSUCCESSFUL;
 }
 
+NTSTATUS
+LinearSearchForProjectionViewMatrix(
+    _In_    HANDLE  hRoblox,
+    _In_    PVOID   pvVisualEngine,
+    _In_    DWORD   dwMaxSearch,
+    _Out_   DWORD*  pdwViewMatrixOffset
+)
+{
+    if ( !hRoblox || !pvVisualEngine || !pdwViewMatrixOffset )
+    {
+        return STATUS_INVALID_PARAMETER;
+    }
+    
+    for ( DWORD dwSearch = 0; dwSearch < ( sizeof( PVOID ) * dwMaxSearch ); dwSearch += sizeof( PVOID ) )
+    {
+        PVOID       pvAddress       = (PVOID) ( (DWORD64)pvVisualEngine + dwSearch );
+        
+        BOOL        bHasNaN         = FALSE;
+        
+        ViewMatrix  mViewMatrix     = { 0 };
+        
+        if ( !pvAddress )
+        {
+            continue;
+        }
+
+        if ( !ReadProcessMemory(
+            hRoblox,
+            pvAddress,
+            &mViewMatrix,
+            sizeof( ViewMatrix ),
+            NULL
+        ) )
+        {
+            OutputFormat(
+                L"Warning: LinearSearchForProjectionViewMatrix: ReadProcessMemory failed at %ph because %lu\n",
+                pvAddress,
+                GetLastError()
+            );
+
+            continue;
+        }
+
+        if ( fabsf( mViewMatrix.fMatrix[2][0] ) > 0.01f     ||
+             fabsf( mViewMatrix.fMatrix[2][1] ) > 0.01f     ||
+             fabsf( mViewMatrix.fMatrix[2][2] ) > 0.01f     ||
+             fabsf( mViewMatrix.fMatrix[2][3]   - 0.1f ) > 0.01f )
+        {
+            continue;
+        }
+
+        for ( INT i = 0; i < 4; i++ )
+        {
+            for ( INT j = 0; j < 4; j++ )
+            {
+                if ( !isfinite( mViewMatrix.fMatrix[i][j] ) )
+                {
+                    bHasNaN = TRUE;
+                    
+                    break;
+                }
+            }
+
+            if ( bHasNaN )
+            {
+                break;
+            }
+        }
+
+        if ( bHasNaN )
+        {
+            continue;
+        }
+
+        *pdwViewMatrixOffset = dwSearch;
+        
+        return STATUS_SUCCESS;
+    }
+
+    return STATUS_UNSUCCESSFUL;
+}
+
 _Success_( return != 0 )
 BOOL
 GetAddresses(
@@ -591,6 +672,26 @@ DumpOffsets(
     }
 
     /*
+        RenderView->VisualEngine
+    */
+
+    bRet = ReadProcessMemory(
+        hRoblox,
+        (LPCVOID)( (DWORD64) pvRenderView + ( sizeof( PVOID ) * 2 ) ), /* Skip pointer to self, skip pointer to DeviceD3D11... */
+        &pvVisualEngine,
+        sizeof( PVOID ),
+        NULL
+    );
+
+    if ( !bRet || !pvVisualEngine )
+    {
+        OutputFormat(
+            L"Warning: Failed to read VisualEngine pointer from RenderView (%lu).\n",
+            GetLastError()
+        );
+    }
+
+    /*
         Instance->Parent
     */
 
@@ -711,7 +812,6 @@ lblSkipClassDescriptorName:
         hRoblox,
         pvWorkspace,
         50,
-        dwParentOffset,
         &dwChildrenOffset
     );
 
@@ -720,6 +820,34 @@ lblSkipClassDescriptorName:
         OutputFormat(
             L"Warning: Failed to find Instance->Children offset (0x%08X).\n",
             lStatus
+        );
+    }
+
+    /*
+        RenderView->VisualEngine->ViewMatrix
+    */
+
+    if ( pvVisualEngine )
+    {
+        lStatus = LinearSearchForProjectionViewMatrix(
+            hRoblox,
+            pvVisualEngine,
+            170,
+            &dwViewMatrixOffset
+        );
+
+        if ( !NT_SUCCESS( lStatus ) || !dwViewMatrixOffset )
+        {
+            OutputFormat(
+                L"Warning: Failed to find ViewMatrix offset (0x%08X).\n",
+                lStatus
+            );
+        }
+    }
+    else
+    {
+        OutputFormat(
+            L"Warning: Skipping ViewMatrix offset search due to missing VisualEngine pointer.\n"
         );
     }
 
@@ -750,6 +878,11 @@ lblSkipClassDescriptorName:
     OutputFormat(
         L"#define INSTANCE_CHILDREN_PTR_OFFSET           0x%lx\n",
         dwChildrenOffset
+    );
+
+    OutputFormat(
+        L"#define VISUALENGNE_VIEW_MATRIX_OFFSET         0x%lx\n",
+        dwViewMatrixOffset
     );
 
     OutputFormat(
