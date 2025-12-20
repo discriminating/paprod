@@ -14,6 +14,7 @@ OutputFormat(
     ...
 );
 
+_Success_( return == STATUS_SUCCESS )
 NTSTATUS
 LinearSearchForClass(
     _In_        HANDLE      hRoblox,
@@ -81,7 +82,7 @@ LinearSearchForClass(
 
 _Success_( return == STATUS_SUCCESS )
 NTSTATUS
-LinearSearchWorkspace(
+LinearSearchForWorkspace(
     _In_                                        HANDLE  hRoblox,
     _In_                                        PVOID   pvDataModel,
     _Outptr_result_nullonfailure_   __restrict  PVOID*  pvOutWorkspace
@@ -112,7 +113,7 @@ LinearSearchWorkspace(
         if ( !bRet )
         {
             OutputFormat(
-                L"Warning: LinearSearchWorkspace: ReadProcessMemory failed at %ph because %lu\n",
+                L"Warning: LinearSearchForWorkspace: ReadProcessMemory failed at %ph because %lu\n",
                 (LPCVOID) ( (DWORD64) pvDataModel + dwSearch ),
                 GetLastError()
             );
@@ -449,6 +450,7 @@ LinearSearchForChildren(
     return STATUS_UNSUCCESSFUL;
 }
 
+_Success_( return == STATUS_SUCCESS )
 NTSTATUS
 LinearSearchForProjectionViewMatrix(
     _In_    HANDLE  hRoblox,
@@ -589,7 +591,7 @@ GetAddresses(
         pvDataModel
     );
 
-    lStatus = LinearSearchWorkspace(
+    lStatus = LinearSearchForWorkspace(
         hRoblox,
         pvDataModel,
         &pvWorkspace

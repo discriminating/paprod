@@ -1,5 +1,6 @@
 #include <rtti/RunTimeTypeInformation.H>
 
+_Success_( return != 0 )
 BOOL
 IsClass(
     _In_        HANDLE          hRoblox,
@@ -95,6 +96,7 @@ IsClass(
     ) == 0;
 }
 
+_Success_( return != 0 )
 BOOL
 IsRobloxClass(
     _In_    HANDLE          hRoblox,

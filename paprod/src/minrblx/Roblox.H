@@ -18,7 +18,7 @@
 
 typedef struct RBX_ViewMatrix
 {
-	FLOAT fMatrix[4][4];
+    FLOAT fMatrix[4][4];
 } ViewMatrix, *PViewMatrix;
 
 _Success_( return == STATUS_SUCCESS )
@@ -38,6 +38,7 @@ RobloxGetDataModel(
     _Outptr_result_nullonfailure_   __restrict  PVOID*      ppvDataModelOut
 );
 
+_Success_( return == STATUS_SUCCESS )
 _Must_inspect_result_
 NTSTATUS
 RobloxBatchGetChildren(

@@ -19,6 +19,7 @@ struct RTTICompleteObjectLocator
     INT			pSelf;
 };
 
+_Success_( return != 0 )
 BOOL
 IsClass(
     _In_        HANDLE          hRoblox,
@@ -26,6 +27,7 @@ IsClass(
     _In_z_      CONST CHAR*     szClassName
 );
 
+_Success_( return != 0 )
 BOOL
 IsRobloxClass(
     _In_    HANDLE          hRoblox,

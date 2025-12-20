@@ -367,6 +367,7 @@ lblRGDMSearch:
     return STATUS_SUCCESS;
 }
 
+_Success_( return == STATUS_SUCCESS )
 _Must_inspect_result_
 NTSTATUS
 RobloxBatchGetChildren(
@@ -377,7 +378,12 @@ RobloxBatchGetChildren(
     _In_    DWORD   dwChildrenAmount
 )
 {
-    if ( !hRoblox || !pChildrenStart || !ppvChildrenOutBuff || dwChildrenAmount == 0 )
+    if ( !hRoblox || !pChildrenStart || !ppvChildrenOutBuff )
+    {
+        return STATUS_INVALID_PARAMETER;
+    }
+
+    if ( dwChildrenAmount == 0 )
     {
         return STATUS_INVALID_PARAMETER;
     }

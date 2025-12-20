@@ -130,9 +130,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <None Include="README.md" />
-  </ItemGroup>
-  <ItemGroup>
     <ClCompile Include="src\dumper\Dump.C" />
     <ClCompile Include="src\dumper\InitDump.C" />
     <ClCompile Include="src\Entry.C" />
