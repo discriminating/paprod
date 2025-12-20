@@ -1,6 +1,5 @@
 #pragma once
 
-#include <nt/GetProcessId.H>
 #include <dumper/Dump.H>
 
 _Success_( return != 0 )

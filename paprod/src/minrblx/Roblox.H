@@ -1,6 +1,6 @@
 #pragma once
 
-#include <nt/NtInclude.H>
+#include <nt/NtUtils.H>
 #include <rtti/RunTimeTypeInformation.H>
 
 typedef struct RBX_ViewMatrix
