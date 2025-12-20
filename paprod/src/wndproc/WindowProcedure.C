@@ -5,7 +5,6 @@ Author:     @discriminating
 Date:       18 December 2025
 */
 
-#include <windows.h>
 #include <wndproc/WindowProcedure.H>
 
 /*

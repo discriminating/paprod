@@ -36,7 +36,7 @@ RobloxGetRenderView(
         Walk the heap for RenderView's class instance...
     */
 
-    while ( dwAddress < ARBITRARY_HEAP_BARRIER )
+    while ( dwAddress < MAX_MEMORY_ADDR )
     {
         SIZE_T      szBytesReturned     = 0;
         SIZE_T      szBytesRead         = 0;

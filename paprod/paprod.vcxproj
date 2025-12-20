@@ -135,6 +135,7 @@
     <ClCompile Include="src\Entry.C" />
     <ClCompile Include="src\nt\GetProcessId.C" />
     <ClCompile Include="src\minrblx\Roblox.C" />
+    <ClCompile Include="src\nt\IsValidPointer.C" />
     <ClCompile Include="src\rtti\RunTimeTypeInformation.C" />
     <ClCompile Include="src\wndproc\WindowProcedure.C" />
   </ItemGroup>
@@ -143,6 +144,9 @@
     <ClInclude Include="src\dumper\InitDump.H" />
     <ClInclude Include="src\minrblx\Roblox.H" />
     <ClInclude Include="src\nt\GetProcessId.H" />
+    <ClInclude Include="src\nt\IsValidPointer.H" />
+    <ClInclude Include="src\nt\Nt.H" />
+    <ClInclude Include="src\nt\NtInclude.H" />
     <ClInclude Include="src\rtti\RunTimeTypeInformation.H" />
     <ClInclude Include="src\wndproc\WindowProcedure.H" />
   </ItemGroup>

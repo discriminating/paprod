@@ -1,20 +1,7 @@
 #pragma once
 
-#include <windows.h>
-#pragma warning(push)
-#pragma warning(disable:4005)
-#include <ntstatus.h>
-#pragma warning(pop)
-
+#include <nt/NtInclude.H>
 #include <rtti/RunTimeTypeInformation.H>
-
-/*
-    Arbitrary heap pointer check... TODO: Improve this?
-*/
-#define IS_HEAP_PTR(ptr) ( (DWORD64)ptr > 0x1000000000 && (DWORD64)ptr < 0x4FFFFFFFFFFF )
-
-#define ARBITRARY_HEAP_BARRIER	0x4FFFFFFFFFFF
-#define PAGE_SIZE               0x1000
 
 typedef struct RBX_ViewMatrix
 {

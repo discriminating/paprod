@@ -36,6 +36,9 @@
     <ClCompile Include="src\dumper\Dump.C">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\nt\IsValidPointer.C">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\rtti\RunTimeTypeInformation.H">
@@ -54,6 +57,15 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\dumper\Dump.H">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\nt\IsValidPointer.H">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\nt\Nt.H">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\nt\NtInclude.H">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

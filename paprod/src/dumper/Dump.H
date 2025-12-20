@@ -1,7 +1,5 @@
 #pragma once
 
-#include <windows.h>
-#include <winternl.h>
 #include <math.h>
 #include <minrblx/Roblox.H>
 

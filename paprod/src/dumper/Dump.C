@@ -202,7 +202,7 @@ LinearSearchForString(
             continue;
         }
 
-        if ( !IS_HEAP_PTR( pvAddress ) )
+        if ( !IS_VALID_POINTER( hRoblox, pvAddress ) )
         {
             continue;
         }
@@ -288,7 +288,7 @@ LinearSearchForChildren(
             continue;
         }
 
-        if ( !IS_HEAP_PTR( pvAddress ) )
+        if ( !IS_VALID_POINTER( hRoblox, pvAddress ) )
         {
             continue;
         }
@@ -328,7 +328,7 @@ LinearSearchForChildren(
             continue;
         }
 
-        if ( !IS_HEAP_PTR( pvChildrenPtr ) )
+        if ( !IS_VALID_POINTER( hRoblox, pvChildrenPtr ) )
         {
             continue;
         }
@@ -352,7 +352,7 @@ LinearSearchForChildren(
             continue;
         }
 
-        if ( !IS_HEAP_PTR( pvListStart ) )
+        if ( !IS_VALID_POINTER( hRoblox, pvListStart ) )
         {
             continue;
         }
@@ -376,7 +376,7 @@ LinearSearchForChildren(
             continue;
         }
 
-        if ( !IS_HEAP_PTR( pvListEnd ) )
+        if ( !IS_VALID_POINTER( hRoblox, pvListEnd ) )
         {
             continue;
         }

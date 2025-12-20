@@ -1,6 +1,5 @@
 #pragma once
 
-#include <windows.h>
 #include <nt/GetProcessId.H>
 #include <dumper/Dump.H>
 
