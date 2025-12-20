@@ -14,12 +14,12 @@ GetProcessIdFromName(
     _Out_   LPDWORD     lpProcessId
 )
 {
-    DWORD                           dwBufferSize    = 0;
-    ULONG                           dwSize          = 0;
-    NTSTATUS                        lStatus         = 0;
-    PVOID                           pBuffer         = NULL;
-    BOOL                            bStatus         = FALSE;
-    SYSTEM_PROCESS_INFORMATION*     psProcessInfo   = { 0 };
+    DWORD                           dwBufferSize        = 0;
+    ULONG                           dwSize              = 0;
+    NTSTATUS                        lStatus             = 0;
+    PVOID                           pBuffer             = NULL;
+    BOOL                            bStatus             = FALSE;
+    SYSTEM_PROCESS_INFORMATION*     psProcessInfo       = { 0 };
 
     if ( lpProcessId        == NULL     ||
         lpProcessName       == NULL     ||

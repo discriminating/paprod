@@ -1,11 +1,16 @@
 #pragma once
 
-#include <windows.h>
-#include <winternl.h>
 #pragma warning(push)
 #pragma warning(disable:4005)
+#pragma warning(disable:4820)
+#pragma warning(disable:4668)
+#include <windows.h>
+#include <winternl.h>
 #include <ntstatus.h>
 #pragma warning(pop)
+
+#pragma warning(disable:5045)
+#pragma warning(disable:4711)
 
 #pragma comment(lib, "ntdll.lib")
 

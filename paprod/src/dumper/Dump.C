@@ -393,7 +393,7 @@ LinearSearchForChildren(
 
         dwChildCount = (DWORD) ( (DWORD64) pvListEnd - (DWORD64) pvListStart ) / ( sizeof( PVOID ) * 2 );
 
-        if ( dwChildCount < 0 )
+        if ( dwChildCount == 0 )
         {
             continue;
         }
@@ -580,6 +580,13 @@ GetAddresses(
             L"Error: Failed to get DataModel address (0x%08X).\n",
             lStatus
         );
+
+        if ( lStatus == STATUS_PENDING )
+        {
+            OutputFormat(
+                L"Info: DataModel is NULL. Please dump while in a game...\n"
+            );
+        }
 
         return FALSE;
     }

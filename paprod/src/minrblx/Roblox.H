@@ -3,6 +3,12 @@
 #include <nt/NtUtils.H>
 #include <rtti/RunTimeTypeInformation.H>
 
+/*
+    Arbitrary search depths. TODO: Make these configurable?
+*/
+
+#define DATAMODEL_SEARCH_DEPTH    0x400
+
 typedef struct RBX_ViewMatrix
 {
     FLOAT fMatrix[4][4];

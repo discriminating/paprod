@@ -7,9 +7,6 @@ Date:       19 December 2025
 
 #include <minrblx/Roblox.H>
 
-DWORD   g_dwRenderToInvalid     = 0x0;
-DWORD   g_dwInvalidToReal       = 0x0;
-
 _Success_( return == STATUS_SUCCESS )
 NTSTATUS
 WINAPI
@@ -225,13 +222,16 @@ RobloxGetDataModel(
     _Outptr_result_nullonfailure_   __restrict  PVOID*      ppvDataModelOut
 )
 {
-    DWORD64     dwAddress               = 0;
-    DWORD64     dwPointer               = 0;
-    DWORD64     dwInvalidDataModel      = 0;
-    DWORD64     dwDataModel             = 0;
+    DWORD64         dwAddress               = 0;
+    DWORD64         dwPointer               = 0;
+    DWORD64         dwInvalidDataModel      = 0;
+    DWORD64         dwDataModel             = 0;
     
-    DWORD       dwMaxSearchDepth        = 0x400; /* Arbitrary... bad, bad, bad... */
-    DWORD       dwCurrentSearchDepth    = 0;
+    DWORD           dwMaxSearchDepth        = DATAMODEL_SEARCH_DEPTH;
+    DWORD           dwCurrentSearchDepth    = 0;
+
+    static  DWORD   dwIntermediateOffset    = 0;
+    static  DWORD   dwDataModelOffset       = 0;
 
     if ( !hRoblox || !pvRenderView || !ppvDataModelOut )
     {
@@ -251,12 +251,12 @@ RobloxGetDataModel(
             - RBX::DataModel (Valid)
     */
 
-    if ( g_dwInvalidToReal     &&
-         g_dwRenderToInvalid )
+    if ( dwIntermediateOffset   &&
+         dwDataModelOffset )
     {
         if ( !ReadProcessMemory(
             hRoblox,
-            (LPCVOID)( (DWORD64)pvRenderView + g_dwRenderToInvalid ),
+            (LPCVOID)( (DWORD64)pvRenderView + dwDataModelOffset ),
             &dwPointer,
             sizeof( dwPointer ),
             NULL
@@ -268,9 +268,9 @@ RobloxGetDataModel(
         if ( !dwPointer )
         {
             /*
-                When changing games Roblox deletes the old
-                DataModel and creates a new one, so caller
-                needs to wait for it to be created.
+                This edge case can happen when changing games,
+                as Roblox reallocates the DataModel for each
+                game session.
             */
 
             return STATUS_PENDING;
@@ -278,7 +278,7 @@ RobloxGetDataModel(
 
         if ( !ReadProcessMemory(
             hRoblox,
-            (LPCVOID)( dwPointer + g_dwInvalidToReal ),
+            (LPCVOID)( dwPointer + dwIntermediateOffset ),
             &dwDataModel,
             sizeof( dwDataModel ),
             NULL
@@ -336,11 +336,11 @@ lblRGDMSearch:
                 RBX::RenderView -> RBX::DataModel (Intermediate) -> RBX::DataModel.
             */
 
-            dwInvalidDataModel          = dwPointer;
-            g_dwRenderToInvalid         = dwCurrentSearchDepth;
+            dwInvalidDataModel      = dwPointer;
+            dwDataModelOffset       = dwCurrentSearchDepth;
 
-            dwAddress                   = dwInvalidDataModel;
-            dwCurrentSearchDepth        = 0;
+            dwAddress               = dwInvalidDataModel;
+            dwCurrentSearchDepth    = 0;
 
             /*
                 Restart search from Invalid DataModel.
@@ -350,8 +350,8 @@ lblRGDMSearch:
         }
         else
         {
-            dwDataModel                 = dwPointer;
-            g_dwInvalidToReal           = dwCurrentSearchDepth;
+            dwDataModel             = dwPointer;
+            dwIntermediateOffset    = dwCurrentSearchDepth;
         }
 
         break;

@@ -1,6 +1,11 @@
 #pragma once
 
+#pragma warning(push)
+#pragma warning(disable:4668)
 #include <windows.h>
+#pragma warning(pop)
+
+#pragma warning(disable:5045)
 
 struct TypeDescriptor
 {
