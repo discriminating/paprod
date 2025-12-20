@@ -134,13 +134,27 @@ RobloxGetRenderView(
                     Weird structure RenderView and a few other
                     classes have. Exploitable to scan faster.
 
-                    Sometimes changes.
+                    I've yet to fully figure out what exactly
+                    this is. It used to start at +38h, but it
+                    has changed to +48h. It may change again.
+                    
+                    The structure of each value, is three
+                    DWORD32s. The first DWORD32 starts off as
+                    16, but can be modified. The second DWORD32
+                    increments respectively with the frame rate,
+                    (higher = faster), and the third DWORD32 is
+                    always n bytes larger then the second, with
+                    n being the first DWORD32.
+                    
+                    Setting the first DWORD32 to 1 seems to stop
+                    the second DWORD32 from updating.
                 */
 
                 if ( *(INT*)( pBuffer + i - 0x48 ) == 0x10 ||
                      *(INT*)( pBuffer + i + 0x48 ) != 0x10 ||
                      *(INT*)( pBuffer + i + 0x80 ) != 0x10 ||
-                     *(INT*)( pBuffer + i + 0xB8 ) != 0x10 )
+                     *(INT*)( pBuffer + i + 0xB8 ) != 0x10 /* ||
+                     *(INT*)( pBuffer + i + 0xF0 ) != 0x10*/ )
                 {
                     continue;
                 }
@@ -160,9 +174,8 @@ RobloxGetRenderView(
             }
 
             /*
-                Third pointer is a pointer to VisualEngine
-            */
-
+                Not needed, probably safe to omit.
+            
             if ( !IsClass(
                 hRoblox,
                 (PVOID)( *(DWORD64*)( pBuffer + i + ( sizeof( PVOID ) * 2 ) ) ),
@@ -171,6 +184,7 @@ RobloxGetRenderView(
             {
                 continue;
             }
+            */
 
             *ppvRenderViewOut = (PVOID)( dwAddress + i );
 

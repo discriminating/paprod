@@ -201,7 +201,7 @@ LinearSearchForString(
             continue;
         }
 
-        if ( !IS_HEAP_PTR(pvAddress) )
+        if ( !IS_HEAP_PTR( pvAddress ) )
         {
             continue;
         }
@@ -288,7 +288,7 @@ LinearSearchForChildren(
             continue;
         }
 
-        if ( !IS_HEAP_PTR(pvAddress) )
+        if ( !IS_HEAP_PTR( pvAddress ) )
         {
             continue;
         }
@@ -559,11 +559,23 @@ DumpOffsets(
     PVOID   pvVisualEngine                  = 0x0;
 
     DWORD   dwParentOffset                  = 0x0;
+
     DWORD   dwClassDescriptorOffset         = 0x0;
     DWORD   dwClassDescriptorNameOffset     = 0x0;
+    
     DWORD   dwInstanceNameOffset            = 0x0;
     DWORD   dwChildrenOffset                = 0x0;
+    
+    /*DWORD   dwPrimitiveOffset               = 0x0;*/
+    /*DWORD   dwCFrameOffset                  = 0x0;*/
+
+    /*DWORD   dwModelInstanceOffset           = 0x0;*/
+    /*DWORD   dwHumanoidOffset                = 0x0;*/
+    /*DWORD   dwHealthOffset                  = 0x0;*/
+    /*DWORD   dwMaxHealthOffset               = 0x0;*/
+
     DWORD   dwViewMatrixOffset              = 0x0;
+    /*DWORD   dwViewportSizeOffset            = 0x0;*/
 
     bRet = GetAddresses(
         hRoblox,
