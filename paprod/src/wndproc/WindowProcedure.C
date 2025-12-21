@@ -2,7 +2,7 @@
 File:       WindowProcedure.C
 Purpose:    Window procedure for handling window messages
 Author:     @discriminating
-Date:       20 December 2025
+Date:       21 December 2025
 */
 
 #include <wndproc/WindowProcedure.H>
@@ -263,7 +263,7 @@ WindowProcedureW(
                 {
                     if ( MessageBoxW(
                         hWnd,
-                        L"Are you sure you want to dump from the client?",
+                        L"Are you sure you want to dump from the client?\n\nMake sure you're in your own game to avoid getting banned.",
                         L"Roblox Offset Dumper",
                         MB_YESNO | MB_ICONQUESTION
                     ) != IDYES )

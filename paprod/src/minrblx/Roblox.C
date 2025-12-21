@@ -2,7 +2,7 @@
 File:       Roblox.C
 Purpose:    Functions to interact with Roblox client
 Author:     @discriminating
-Date:       20 December 2025
+Date:       21 December 2025
 */
 
 #include <minrblx/Roblox.H>
@@ -425,4 +425,136 @@ RobloxBatchGetChildren(
     *ppvChildrenOutBuff = pChildrenBuff;
 
     return STATUS_SUCCESS;
+}
+
+_Success_( return == STATUS_SUCCESS )
+NTSTATUS
+RobloxReadString(
+    _In_                            HANDLE          hRoblox,
+    _In_                            PVOID           pvInstance,
+    _In_                            DWORD           dwStringOffset,
+    _In_                            DWORD           dwBufferSize,
+    _Out_writes_z_( dwBufferSize )  PCHAR           pszOutBuffer
+)
+{
+    ROBLOX_STRING       sRbxString      = { 0 };
+    PCHAR               pszString       = NULL;
+    PVOID               pvStringPtr     = NULL;
+    SIZE_T              szStringSize    = 0;
+    NTSTATUS            lStatus         = STATUS_UNSUCCESSFUL;
+
+    if ( !hRoblox || !pvInstance || !pszOutBuffer || dwBufferSize == 0 )
+    {
+        return STATUS_INVALID_PARAMETER;
+    }
+
+    if ( dwBufferSize < 16 )
+    {
+        return STATUS_BUFFER_TOO_SMALL;
+    }
+
+    /*
+        Structure:
+
+        RBX::Instance
+         - ...
+         - Pointer to string (dwStringOffset)
+            - ROBLOX_STRING
+           {
+                - Union:
+                    - PCHAR pszLongString;
+                    - CHAR  szShortString[16];
+                - DWORD32 dwStringLen;
+           }
+    */
+
+    if ( !ReadProcessMemory(
+        hRoblox,
+        (LPCVOID)( (DWORD64)pvInstance + dwStringOffset ),
+        &pvStringPtr,
+        sizeof( PVOID ),
+        NULL
+    ) )
+    {
+        return STATUS_UNSUCCESSFUL;
+    }
+
+    if ( !ReadProcessMemory(
+        hRoblox,
+        (LPCVOID)pvStringPtr,
+        &sRbxString,
+        sizeof( ROBLOX_STRING ),
+        NULL
+    ) )
+    {
+        return STATUS_UNSUCCESSFUL;
+    }
+
+    if ( sRbxString.dwStringLen == 0 )
+    {
+        pszOutBuffer[0] = '\0';
+        
+        return STATUS_SUCCESS;
+    }
+
+    if ( sRbxString.dwStringLen > ROBLOX_STRING_MAX_LEN )
+    {
+        /*
+            Should never happen... but just in case.
+        */
+
+        return STATUS_INTERNAL_ERROR;
+    }
+
+    if ( sRbxString.dwStringLen <= 15 )
+    {
+        /*
+            Short string optimization.
+        */
+
+        return ( StringCchCopyNA(
+            pszOutBuffer,
+            dwBufferSize,
+            sRbxString.szString.szShortString,
+            sRbxString.dwStringLen
+        ) == S_OK ) ? STATUS_SUCCESS : STATUS_BUFFER_TOO_SMALL;
+    }
+
+    /*
+        Long string.
+    */
+
+    pszString = sRbxString.szString.pszLongString;
+
+    if ( !IS_VALID_POINTER( hRoblox, pszString ) )
+    {
+        return STATUS_UNSUCCESSFUL;
+    }
+
+    if ( sRbxString.dwStringLen < dwBufferSize )
+    {
+        szStringSize    = sRbxString.dwStringLen;
+        lStatus         = STATUS_SUCCESS;
+    }
+    else
+    {
+        szStringSize    = dwBufferSize - 1;
+        lStatus         = STATUS_BUFFER_TOO_SMALL;
+    }
+
+    if ( !ReadProcessMemory(
+        hRoblox,
+        (LPCVOID)pszString,
+        pszOutBuffer,
+        szStringSize,
+        NULL
+    ) )
+    {
+        return STATUS_UNSUCCESSFUL;
+    }
+
+#pragma warning(suppress: 6386) /* pszOutBuffer is guaranteed to be at least szStringSize + 1... seriously, MSVC... */
+    pszOutBuffer[szStringSize] = '\0';
+
+    return lStatus;
 }

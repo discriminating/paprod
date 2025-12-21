@@ -2,7 +2,7 @@
 File:       InitDump.C
 Purpose:    Initialization of dump process
 Author:     @discriminating
-Date:       19 December 2025
+Date:       21 December 2025
 */
 
 #include <dumper/InitDump.H>
@@ -103,6 +103,50 @@ GetRobloxHandle(
     return hRoblox;
 }
 
+VOID
+PrintOffsets(
+    _In_    PROBLOX_OFFSETS  psRobloxOffsets
+)
+{
+    OutputFormat(
+        L"\n============================== OFFSETS ==============================\n\n"
+    );
+
+    OutputFormat(
+        L"#define INSTANCE_PARENT_PTR_OFFSET             0x%lx\n",
+        psRobloxOffsets->dwParent
+    );
+
+    OutputFormat(
+        L"#define INSTANCE_CLASS_DESCRIPTOR_PTR_OFFSET   0x%lx\n",
+        psRobloxOffsets->dwClassDescriptor
+    );
+
+    OutputFormat(
+        L"#define CLASS_DESCRIPTOR_NAME_PTR_OFFSET       0x%lx\n",
+        psRobloxOffsets->dwClassDescriptorName
+    );
+
+    OutputFormat(
+        L"#define INSTANCE_NAME_PTR_OFFSET               0x%lx\n",
+        psRobloxOffsets->dwInstanceName
+    );
+
+    OutputFormat(
+        L"#define INSTANCE_CHILDREN_PTR_OFFSET           0x%lx\n",
+        psRobloxOffsets->dwChildren
+    );
+
+    OutputFormat(
+        L"#define VISUALENGNE_VIEW_MATRIX_OFFSET         0x%lx\n",
+        psRobloxOffsets->dwViewMatrix
+    );
+
+    OutputFormat(
+        L"\n=====================================================================\n"
+    );
+}
+
 _Success_( return != 0 )
 BOOL
 InitDump(
@@ -111,9 +155,11 @@ InitDump(
     _In_    BOOL    bFastRenderViewScan
 )
 {
-    HANDLE      hRoblox     = NULL;
-    BOOL        bRet        = FALSE;
-    NTSTATUS    lStatus     = 0;
+    HANDLE              hRoblox             = NULL;
+    BOOL                bRet                = FALSE;
+    NTSTATUS            lStatus             = 0;
+    INT                 nMsgBoxRet          = 0;
+    ROBLOX_OFFSETS      sRobloxOffsets      = { 0 };
 
     hRoblox = GetRobloxHandle(
         bUseClient,
@@ -152,7 +198,9 @@ InitDump(
 
     bRet = DumpOffsets(
         hRoblox,
-        bFastRenderViewScan
+        bUseClient,
+        bFastRenderViewScan,
+        &sRobloxOffsets
     );
 
     if ( !bRet )
@@ -160,6 +208,18 @@ InitDump(
         OutputFormat(
             L"Error: Failed to dump offsets.\n"
         );
+
+        nMsgBoxRet = MessageBoxW(
+            NULL,
+            L"Failed to dump offsets. Please check the output for more information.\n\nWould you like to see the output anyway?",
+            L"Roblox Offset Dumper",
+            MB_ICONERROR | MB_YESNO
+        );
+
+        if ( nMsgBoxRet != IDYES )
+        {
+            goto lblIDResumeAndExit;
+        }
     }
     else
     {
@@ -168,6 +228,9 @@ InitDump(
         );
     }
 
+    PrintOffsets( &sRobloxOffsets );
+
+lblIDResumeAndExit:
     if ( bSuspend )
     {
         lStatus = NtResumeProcess( hRoblox );

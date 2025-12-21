@@ -2,7 +2,7 @@
 File:       Dump.C
 Purpose:    Functions to dump Roblox offsets
 Author:     @discriminating
-Date:       20 December 2025
+Date:       21 December 2025
 */
 
 #include <dumper/Dump.H>
@@ -110,8 +110,10 @@ GetAddresses(
 _Success_( return != 0 )
 BOOL
 DumpOffsets(
-    _In_    HANDLE  hRoblox,
-    _In_    BOOL    bFastRenderViewScan
+    _In_    HANDLE              hRoblox,
+    _In_    BOOL                bIsUsingClient,
+    _In_    BOOL                bFastRenderViewScan,
+    _Out_   PROBLOX_OFFSETS     psRobloxOffsets
 )
 {
     if ( !hRoblox || hRoblox == INVALID_HANDLE_VALUE )
@@ -119,16 +121,25 @@ DumpOffsets(
         return FALSE;
     }
 
-    NTSTATUS            lStatus                 = STATUS_UNSUCCESSFUL;
-    BOOL                bRet                    = FALSE;
+    NTSTATUS        lStatus                 = STATUS_UNSUCCESSFUL;
 
-    PVOID               pvRenderView            = 0x0;
-    PVOID               pvDataModel             = 0x0;
-    PVOID               pvWorkspace             = 0x0;
-    PVOID               pvClassDescriptor       = 0x0;
-    PVOID               pvVisualEngine          = 0x0;
+    BOOL            bRet                    = FALSE;
+    BOOL            bIsInGame               = FALSE;
 
-    ROBLOX_OFFSETS      sRobloxOffsets          = { 0 };
+    PVOID           pvRenderView            = 0x0;
+    PVOID           pvDataModel             = 0x0;
+    PVOID           pvWorkspace             = 0x0;
+    PVOID           pvClassDescriptor       = 0x0;
+    PVOID           pvVisualEngine          = 0x0;
+
+    CHAR    szTempName[ ROBLOX_STRING_MAX_LEN + 1 ]     = { 0 };
+
+    //ROBLOX_OFFSETS      sRobloxOffsets          = { 0 };
+
+    ZeroMemory(
+        psRobloxOffsets,
+        sizeof( ROBLOX_OFFSETS )
+    );
 
     bRet = GetAddresses(
         hRoblox,
@@ -171,12 +182,12 @@ DumpOffsets(
         hRoblox,
         pvWorkspace,
         ".?AVDataModel@RBX@@",
-        50,
+        ARBITRARY_SEARCH_DEPTH,
         sizeof( PVOID ),
-        &sRobloxOffsets.dwParent
+        &psRobloxOffsets->dwParent
     );
 
-    if ( !NT_SUCCESS( lStatus ) || !sRobloxOffsets.dwParent )
+    if ( !NT_SUCCESS( lStatus ) || !psRobloxOffsets->dwParent )
     {
         OutputFormat(
             L"Warning: Failed to find Instance->Parent offset (0x%08X).\n",
@@ -192,12 +203,12 @@ DumpOffsets(
         hRoblox,
         pvWorkspace,
         ".?AVClassDescriptor@Reflection@RBX@@",
-        50,
+        ARBITRARY_SEARCH_DEPTH,
         sizeof( PVOID ),
-        &sRobloxOffsets.dwClassDescriptor
+        &psRobloxOffsets->dwClassDescriptor
     );
 
-    if ( !NT_SUCCESS( lStatus ) || !sRobloxOffsets.dwClassDescriptor )
+    if ( !NT_SUCCESS( lStatus ) || !psRobloxOffsets->dwClassDescriptor )
     {
         OutputFormat(
             L"Warning: Failed to find Instance->ClassDescriptor offset (0x%08X).\n",
@@ -209,7 +220,7 @@ DumpOffsets(
         Instance->ClassDescriptor->Name
     */
 
-    if ( !sRobloxOffsets.dwClassDescriptor )
+    if ( !psRobloxOffsets->dwClassDescriptor )
     {
         OutputFormat(
             L"Warning: Skipping ClassDescriptor->Name offset search due to missing ClassDescriptor offset.\n"
@@ -220,7 +231,7 @@ DumpOffsets(
 
     bRet = ReadProcessMemory(
         hRoblox,
-        (LPCVOID) ( (DWORD64) pvWorkspace + sRobloxOffsets.dwClassDescriptor ),
+        (LPCVOID) ( (DWORD64) pvWorkspace + psRobloxOffsets->dwClassDescriptor ),
         &pvClassDescriptor,
         sizeof( PVOID ),
         NULL
@@ -240,12 +251,12 @@ DumpOffsets(
         hRoblox,
         pvClassDescriptor,
         "Workspace",
-        50,
+        ARBITRARY_SEARCH_DEPTH,
         sizeof( PVOID ),
-        &sRobloxOffsets.dwClassDescriptorName
+        &psRobloxOffsets->dwClassDescriptorName
     );
 
-    if ( !NT_SUCCESS( lStatus ) || !sRobloxOffsets.dwClassDescriptorName )
+    if ( !NT_SUCCESS( lStatus ) || !psRobloxOffsets->dwClassDescriptorName )
     {
         OutputFormat(
             L"Warning: Failed to find ClassDescriptor->Name offset (0x%08X).\n",
@@ -263,12 +274,12 @@ lblSkipClassDescriptorName:
         hRoblox,
         pvWorkspace,
         "Workspace",
-        50,
+        ARBITRARY_SEARCH_DEPTH,
         sizeof( PVOID ),
-        &sRobloxOffsets.dwInstanceName
+        &psRobloxOffsets->dwInstanceName
     );
 
-    if ( !NT_SUCCESS( lStatus ) || !sRobloxOffsets.dwInstanceName )
+    if ( !NT_SUCCESS( lStatus ) || !psRobloxOffsets->dwInstanceName )
     {
         OutputFormat(
             L"Warning: Failed to find Instance->Name offset (0x%08X).\n",
@@ -283,11 +294,11 @@ lblSkipClassDescriptorName:
     lStatus = LinearSearchForChildren(
         hRoblox,
         pvWorkspace,
-        50,
-        &sRobloxOffsets.dwChildren
+        ARBITRARY_SEARCH_DEPTH,
+        &psRobloxOffsets->dwChildren
     );
 
-    if ( !NT_SUCCESS( lStatus ) || !sRobloxOffsets.dwChildren )
+    if ( !NT_SUCCESS( lStatus ) || !psRobloxOffsets->dwChildren )
     {
         OutputFormat(
             L"Warning: Failed to find Instance->Children offset (0x%08X).\n",
@@ -304,11 +315,11 @@ lblSkipClassDescriptorName:
         lStatus = LinearSearchForProjectionViewMatrix(
             hRoblox,
             pvVisualEngine,
-            170,
-            &sRobloxOffsets.dwViewMatrix
+            PROJECTION_VIEW_MATRIX_SEARCH_DEPTH,
+            &psRobloxOffsets->dwViewMatrix
         );
 
-        if ( !NT_SUCCESS( lStatus ) || !sRobloxOffsets.dwViewMatrix )
+        if ( !NT_SUCCESS( lStatus ) || !psRobloxOffsets->dwViewMatrix )
         {
             OutputFormat(
                 L"Warning: Failed to find ViewMatrix offset (0x%08X).\n",
@@ -323,43 +334,77 @@ lblSkipClassDescriptorName:
         );
     }
 
-    OutputFormat(
-        L"\n============================== OFFSETS ==============================\n\n"
+    /*
+        Determine whether it is safe to continue.
+    */
+
+    if ( !psRobloxOffsets->dwInstanceName )
+    {
+        OutputFormat(
+            L"Error: Failed to find ctitical offset Instance->Name. Cannot determine whether it is safe to continue.\n"
+        );
+
+        return FALSE;
+    }
+
+    lStatus = RobloxReadString(
+        hRoblox,
+        pvDataModel,
+        psRobloxOffsets->dwInstanceName,
+        sizeof( szTempName ),
+        szTempName
     );
 
-    OutputFormat(
-        L"#define INSTANCE_PARENT_PTR_OFFSET             0x%lx\n",
-        sRobloxOffsets.dwParent
-    );
+    if ( !NT_SUCCESS( lStatus ) && lStatus != STATUS_BUFFER_TOO_SMALL )
+    {
+        OutputFormat(
+            L"Error: Failed to read instance name string (0x%08X).\n",
+            lStatus
+        );
 
-    OutputFormat(
-        L"#define INSTANCE_CLASS_DESCRIPTOR_PTR_OFFSET   0x%lx\n",
-        sRobloxOffsets.dwClassDescriptor
-    );
+        goto lblFail;
+    }
 
-    OutputFormat(
-        L"#define CLASS_DESCRIPTOR_NAME_PTR_OFFSET       0x%lx\n",
-        sRobloxOffsets.dwClassDescriptorName
-    );
+    if ( bIsUsingClient )
+    {
+        /*
+            Datamodel is named 'Ugc' when in-game and
+            'LuaApp' when on the home-screen.
+        */
 
-    OutputFormat(
-        L"#define INSTANCE_NAME_PTR_OFFSET               0x%lx\n",
-        sRobloxOffsets.dwInstanceName
-    );
+        bIsInGame = strcmp(
+            szTempName,
+            "Ugc"
+        ) == 0;
+    }
+    else
+    {
+        /*
+            Studio is a bit more ambiguous...
 
-    OutputFormat(
-        L"#define INSTANCE_CHILDREN_PTR_OFFSET           0x%lx\n",
-        sRobloxOffsets.dwChildren
-    );
+            Focus on client from now on.
+        */
 
-    OutputFormat(
-        L"#define VISUALENGNE_VIEW_MATRIX_OFFSET         0x%lx\n",
-        sRobloxOffsets.dwViewMatrix
-    );
+        MessageBoxW(
+            NULL,
+            L"Please use the Roblox Client to get more offsets.",
+            L"Roblox Offset Dumper",
+            MB_OK | MB_ICONINFORMATION
+        );
 
-    OutputFormat(
-        L"\n=====================================================================\n"
-    );
+        bRet = TRUE;
+
+        goto lblExit;
+    }
+
+    if ( !bIsInGame )
+    {
+        OutputFormat(
+            L"Error: You are not in-game. Please join a game to get more offsets.\n"
+        );
+
+        goto lblFail;
+    }
 
     bRet = TRUE;
 
