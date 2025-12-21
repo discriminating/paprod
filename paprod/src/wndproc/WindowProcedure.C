@@ -164,6 +164,13 @@ WindowProcedureW(
                 return -1;
             }
 
+            (VOID)SendMessageW(
+                hCheckboxFastScan,
+                BM_SETCHECK,
+                (WPARAM) BST_CHECKED,
+                0
+            );
+
             hButtonDump = CreateWindowW(
                 L"BUTTON",
                 L"Dump Offsets",

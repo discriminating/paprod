@@ -36,6 +36,9 @@
     <ClCompile Include="src\nt\NtUtils.C">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\dumper\LinearSearch.C">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\rtti\RunTimeTypeInformation.H">
@@ -54,6 +57,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\nt\NtUtils.H">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\dumper\LinearSearch.H">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

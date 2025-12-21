@@ -2,7 +2,7 @@
 File:		Entry.C
 Purpose:	Window setup code, entry point
 Author:		@discriminating
-Date:		18 December 2025
+Date:		20 December 2025
 */
 
 #include <wndproc/WindowProcedure.H>

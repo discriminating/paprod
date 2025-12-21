@@ -1,7 +1,6 @@
 #pragma once
 
-#include <math.h>
-#include <minrblx/Roblox.H>
+#include <dumper/LinearSearch.H>
 
 _Success_( return != 0 )
 BOOL

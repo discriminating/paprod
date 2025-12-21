@@ -2,7 +2,7 @@
 File:       NtUtils.C
 Purpose:    Memory functions, NT functions
 Author:     @discriminating
-Date:       19 December 2025
+Date:       20 December 2025
 */
 
 #include <nt/NtUtils.H>
