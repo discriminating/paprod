@@ -12,7 +12,7 @@ VOID
 OutputFormat(
     _In_    LPCWSTR lpFormat,
     ...
-);;
+);
 
 _Success_( return == STATUS_SUCCESS )
 NTSTATUS
