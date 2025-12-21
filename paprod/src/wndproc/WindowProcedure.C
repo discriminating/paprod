@@ -2,14 +2,11 @@
 File:       WindowProcedure.C
 Purpose:    Window procedure for handling window messages
 Author:     @discriminating
-Date:       18 December 2025
+Date:       20 December 2025
 */
 
 #include <wndproc/WindowProcedure.H>
 
-/*
-    Blah, blah, global variables...
-*/
 HWND g_hRichEditOutput = NULL;
 
 VOID
@@ -290,6 +287,18 @@ WindowProcedureW(
 
                 return 0;
             }
+
+            return 0;
+        }
+
+        case WM_GETMINMAXINFO:
+        {
+            PMINMAXINFO   pMinMaxInfo         = (PMINMAXINFO)lParam;
+
+            pMinMaxInfo->ptMinTrackSize.x      = 800;
+            pMinMaxInfo->ptMinTrackSize.y      = 400;
+
+            return 0;
         }
 
         case WM_PAINT:
@@ -342,6 +351,8 @@ WindowProcedureW(
                     SWP_NOZORDER
                 );
             }
+
+            return 0;
         }
 
         default:
