@@ -23,7 +23,7 @@ typedef struct RBX_ViewportSize
 } ViewportSize, * PViewportSize;
 
 /*
-    Modified from std::string SSO? Maybe...
+    Modified from std string SSO? Maybe...
 */
 
 #pragma pack(push, 1)
