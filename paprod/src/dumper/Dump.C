@@ -406,6 +406,28 @@ lblSkipClassDescriptorName:
         goto lblFail;
     }
 
+    /*
+        RenderView->VisualEngine->ViewportSize
+    */
+
+    if ( pvVisualEngine )
+    {
+        lStatus = LinearSearchForViewportSize(
+            hRoblox,
+            pvVisualEngine,
+            VIEWPORT_SIZE_SEARCH_DEPTH,
+            &psRobloxOffsets->dwViewportSize
+        );
+
+        if ( !NT_SUCCESS( lStatus ) || !psRobloxOffsets->dwViewportSize )
+        {
+            OutputFormat(
+                L"Warning: Failed to find ViewportSize offset (0x%08X).\n",
+                lStatus
+            );
+        }
+    }
+
     bRet = TRUE;
 
     goto lblExit;

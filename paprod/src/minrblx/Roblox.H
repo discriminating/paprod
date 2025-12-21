@@ -16,6 +16,12 @@ typedef struct RBX_ViewMatrix
     FLOAT fMatrix[4][4];
 } ViewMatrix, *PViewMatrix;
 
+typedef struct RBX_ViewportSize
+{
+    FLOAT   fWidth;
+    FLOAT   fHeight;
+} ViewportSize, * PViewportSize;
+
 /*
     Modified from std::string SSO? Maybe...
 */

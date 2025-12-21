@@ -2,6 +2,9 @@
 
 #include <math.h>
 #include <minrblx/Roblox.H>
+#include <ShellScalingApi.h>
+
+#pragma comment( lib, "Shcore.lib" )
 
 _Success_( return == STATUS_SUCCESS )
 NTSTATUS
@@ -49,4 +52,13 @@ LinearSearchForProjectionViewMatrix(
     _In_        PVOID       pvVisualEngine,
     _In_        DWORD       dwMaxSearch,
     _Out_       DWORD*      pdwViewMatrixOffset
+);
+
+_Success_( return == STATUS_SUCCESS )
+NTSTATUS
+LinearSearchForViewportSize(
+    _In_        HANDLE      hRoblox,
+    _In_        PVOID       pvVisualEngine,
+    _In_        DWORD       dwMaxSearch,
+    _Out_       DWORD*      pdwViewportSizeOffset
 );

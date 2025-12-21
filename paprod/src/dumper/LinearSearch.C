@@ -2,7 +2,7 @@
 File:       LinearSearch.C
 Purpose:    Linear search functions for memory scanning
 Author:     @discriminating
-Date:       20 December 2025
+Date:       21 December 2025
 */
 
 #include <dumper/LinearSearch.H>
@@ -163,11 +163,7 @@ LinearSearchForString(
     }
 
     /*
-        Roblox uses std::strings for its names.
-
-        I'm not going to implement scanning for a
-        string longer than 15 characters, because
-        then std::string uses a heap allocation.
+        See RobloxReadString for string structure.
     */
 
     if ( strlen( szString ) > 15 )
@@ -524,6 +520,143 @@ LinearSearchForProjectionViewMatrix(
         }
 
         *pdwViewMatrixOffset = dwSearch;
+        
+        return STATUS_SUCCESS;
+    }
+
+    return STATUS_UNSUCCESSFUL;
+}
+
+_Success_( return == STATUS_SUCCESS )
+NTSTATUS
+LinearSearchForViewportSize(
+    _In_        HANDLE      hRoblox,
+    _In_        PVOID       pvVisualEngine,
+    _In_        DWORD       dwMaxSearch,
+    _Out_       DWORD*      pdwViewportSizeOffset
+)
+{
+    if ( !hRoblox || !pvVisualEngine || !pdwViewportSizeOffset )
+    {
+        return STATUS_INVALID_PARAMETER;
+    }
+
+    if ( dwMaxSearch == 0 )
+    {
+        return STATUS_INVALID_PARAMETER;
+    }
+
+    HMONITOR    hMonitor        = NULL;
+
+    HWND        hwndRoblox      = NULL;
+
+    RECT        rcRoblox       = { 0 };
+
+    UINT        nDPIX           = 0;
+    UINT        nDPIY           = 0;
+
+    hwndRoblox = FindWindowW(
+        NULL,
+        L"Roblox"
+    );
+
+    if ( !hwndRoblox )
+    {
+        return STATUS_UNSUCCESSFUL;
+    }
+
+    if ( !GetClientRect(
+        hwndRoblox,
+        &rcRoblox
+    ) )
+    {
+        return STATUS_UNSUCCESSFUL;
+    }
+
+    hMonitor = MonitorFromWindow(
+        hwndRoblox,
+        MONITOR_DEFAULTTONEAREST
+    );
+
+    if ( !hMonitor )
+    {
+        return STATUS_UNSUCCESSFUL;
+    }
+
+    if ( FAILED( GetDpiForMonitor(
+        hMonitor,
+        MDT_EFFECTIVE_DPI,
+        &nDPIX,
+        &nDPIY
+    ) ) )
+    {
+        return STATUS_UNSUCCESSFUL;
+    }
+
+    for ( DWORD dwSearch = 0; dwSearch < ( sizeof( PVOID ) * dwMaxSearch ); dwSearch += sizeof( PVOID ) )
+    {
+        PVOID           pvAddress       = (PVOID) ( (DWORD64)pvVisualEngine + dwSearch );
+        
+        ViewportSize    vsViewportSize  = { 0 };
+        
+        if ( !pvAddress )
+        {
+            continue;
+        }
+        
+        if ( !ReadProcessMemory(
+            hRoblox,
+            pvAddress,
+            &vsViewportSize,
+            sizeof( ViewportSize ),
+            NULL
+        ) )
+        {
+            OutputFormat(
+                L"Warning: LinearSearchForViewportSize: ReadProcessMemory failed at %ph because %lu\n",
+                pvAddress,
+                GetLastError()
+            );
+            continue;
+        }
+        
+        if ( !isfinite( vsViewportSize.fWidth ) || !isfinite( vsViewportSize.fHeight ) )
+        {
+            continue;
+        }
+
+        if ( vsViewportSize.fWidth  == 0 ||
+             vsViewportSize.fHeight == 0 )
+        {
+            continue;
+        }
+
+        /*
+            Minimum Roblox client window size
+        */
+
+        if ( vsViewportSize.fWidth < 800.0f ||
+             vsViewportSize.fHeight < 580.0f )
+        {
+            continue;
+        }
+
+        /*
+            To find the ViewportSize, we de-scale the Roblox
+            window size by the DPI, as the ViewportSize is
+            not DPI-scaled in memory.
+        */
+
+        FLOAT fExpectedWidth    = (FLOAT) rcRoblox.right    * 96.0f / (FLOAT) nDPIX;
+        FLOAT fExpectedHeight   = (FLOAT) rcRoblox.bottom   * 96.0f / (FLOAT) nDPIY;
+
+        if ( fabsf( vsViewportSize.fWidth  - fExpectedWidth )  > 1.0f   ||
+             fabsf( vsViewportSize.fHeight - fExpectedHeight ) > 1.0f )
+        {
+            continue;
+        }
+
+        *pdwViewportSizeOffset = dwSearch;
         
         return STATUS_SUCCESS;
     }

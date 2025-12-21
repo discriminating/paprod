@@ -143,6 +143,11 @@ PrintOffsets(
     );
 
     OutputFormat(
+        L"#define VISUALENGINE_VIEWPORT_SIZE_OFFSET      0x%lx\n",
+        psRobloxOffsets->dwViewportSize
+    );
+
+    OutputFormat(
         L"\n=====================================================================\n"
     );
 }
