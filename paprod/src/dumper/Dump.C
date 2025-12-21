@@ -119,34 +119,16 @@ DumpOffsets(
         return FALSE;
     }
 
-    NTSTATUS    lStatus     = STATUS_UNSUCCESSFUL;
-    BOOL        bRet        = FALSE;
+    NTSTATUS            lStatus                 = STATUS_UNSUCCESSFUL;
+    BOOL                bRet                    = FALSE;
 
-    PVOID   pvRenderView                    = 0x0;
-    PVOID   pvDataModel                     = 0x0;
-    PVOID   pvWorkspace                     = 0x0;
+    PVOID               pvRenderView            = 0x0;
+    PVOID               pvDataModel             = 0x0;
+    PVOID               pvWorkspace             = 0x0;
+    PVOID               pvClassDescriptor       = 0x0;
+    PVOID               pvVisualEngine          = 0x0;
 
-    PVOID   pvClassDescriptor               = 0x0;
-    PVOID   pvVisualEngine                  = 0x0;
-
-    DWORD   dwParentOffset                  = 0x0;
-
-    DWORD   dwClassDescriptorOffset         = 0x0;
-    DWORD   dwClassDescriptorNameOffset     = 0x0;
-    
-    DWORD   dwInstanceNameOffset            = 0x0;
-    DWORD   dwChildrenOffset                = 0x0;
-    
-    /*DWORD   dwPrimitiveOffset               = 0x0;*/
-    /*DWORD   dwCFrameOffset                  = 0x0;*/
-
-    /*DWORD   dwModelInstanceOffset           = 0x0;*/
-    /*DWORD   dwHumanoidOffset                = 0x0;*/
-    /*DWORD   dwHealthOffset                  = 0x0;*/
-    /*DWORD   dwMaxHealthOffset               = 0x0;*/
-
-    DWORD   dwViewMatrixOffset              = 0x0;
-    /*DWORD   dwViewportSizeOffset            = 0x0;*/
+    ROBLOX_OFFSETS      sRobloxOffsets          = { 0 };
 
     bRet = GetAddresses(
         hRoblox,
@@ -191,10 +173,10 @@ DumpOffsets(
         ".?AVDataModel@RBX@@",
         50,
         sizeof( PVOID ),
-        &dwParentOffset
+        &sRobloxOffsets.dwParent
     );
 
-    if ( !NT_SUCCESS( lStatus ) || !dwParentOffset )
+    if ( !NT_SUCCESS( lStatus ) || !sRobloxOffsets.dwParent )
     {
         OutputFormat(
             L"Warning: Failed to find Instance->Parent offset (0x%08X).\n",
@@ -212,10 +194,10 @@ DumpOffsets(
         ".?AVClassDescriptor@Reflection@RBX@@",
         50,
         sizeof( PVOID ),
-        &dwClassDescriptorOffset
+        &sRobloxOffsets.dwClassDescriptor
     );
 
-    if ( !NT_SUCCESS( lStatus ) || !dwClassDescriptorOffset )
+    if ( !NT_SUCCESS( lStatus ) || !sRobloxOffsets.dwClassDescriptor )
     {
         OutputFormat(
             L"Warning: Failed to find Instance->ClassDescriptor offset (0x%08X).\n",
@@ -227,7 +209,7 @@ DumpOffsets(
         Instance->ClassDescriptor->Name
     */
 
-    if ( !dwClassDescriptorOffset )
+    if ( !sRobloxOffsets.dwClassDescriptor )
     {
         OutputFormat(
             L"Warning: Skipping ClassDescriptor->Name offset search due to missing ClassDescriptor offset.\n"
@@ -238,7 +220,7 @@ DumpOffsets(
 
     bRet = ReadProcessMemory(
         hRoblox,
-        (LPCVOID) ( (DWORD64) pvWorkspace + dwClassDescriptorOffset ),
+        (LPCVOID) ( (DWORD64) pvWorkspace + sRobloxOffsets.dwClassDescriptor ),
         &pvClassDescriptor,
         sizeof( PVOID ),
         NULL
@@ -260,10 +242,10 @@ DumpOffsets(
         "Workspace",
         50,
         sizeof( PVOID ),
-        &dwClassDescriptorNameOffset
+        &sRobloxOffsets.dwClassDescriptorName
     );
 
-    if ( !NT_SUCCESS( lStatus ) || !dwClassDescriptorNameOffset )
+    if ( !NT_SUCCESS( lStatus ) || !sRobloxOffsets.dwClassDescriptorName )
     {
         OutputFormat(
             L"Warning: Failed to find ClassDescriptor->Name offset (0x%08X).\n",
@@ -283,10 +265,10 @@ lblSkipClassDescriptorName:
         "Workspace",
         50,
         sizeof( PVOID ),
-        &dwInstanceNameOffset
+        &sRobloxOffsets.dwInstanceName
     );
 
-    if ( !NT_SUCCESS( lStatus ) || !dwInstanceNameOffset )
+    if ( !NT_SUCCESS( lStatus ) || !sRobloxOffsets.dwInstanceName )
     {
         OutputFormat(
             L"Warning: Failed to find Instance->Name offset (0x%08X).\n",
@@ -302,10 +284,10 @@ lblSkipClassDescriptorName:
         hRoblox,
         pvWorkspace,
         50,
-        &dwChildrenOffset
+        &sRobloxOffsets.dwChildren
     );
 
-    if ( !NT_SUCCESS( lStatus ) || !dwChildrenOffset )
+    if ( !NT_SUCCESS( lStatus ) || !sRobloxOffsets.dwChildren )
     {
         OutputFormat(
             L"Warning: Failed to find Instance->Children offset (0x%08X).\n",
@@ -323,10 +305,10 @@ lblSkipClassDescriptorName:
             hRoblox,
             pvVisualEngine,
             170,
-            &dwViewMatrixOffset
+            &sRobloxOffsets.dwViewMatrix
         );
 
-        if ( !NT_SUCCESS( lStatus ) || !dwViewMatrixOffset )
+        if ( !NT_SUCCESS( lStatus ) || !sRobloxOffsets.dwViewMatrix )
         {
             OutputFormat(
                 L"Warning: Failed to find ViewMatrix offset (0x%08X).\n",
@@ -347,32 +329,32 @@ lblSkipClassDescriptorName:
 
     OutputFormat(
         L"#define INSTANCE_PARENT_PTR_OFFSET             0x%lx\n",
-        dwParentOffset
+        sRobloxOffsets.dwParent
     );
 
     OutputFormat(
         L"#define INSTANCE_CLASS_DESCRIPTOR_PTR_OFFSET   0x%lx\n",
-        dwClassDescriptorOffset
+        sRobloxOffsets.dwClassDescriptor
     );
 
     OutputFormat(
         L"#define CLASS_DESCRIPTOR_NAME_PTR_OFFSET       0x%lx\n",
-        dwClassDescriptorNameOffset
+        sRobloxOffsets.dwClassDescriptorName
     );
 
     OutputFormat(
         L"#define INSTANCE_NAME_PTR_OFFSET               0x%lx\n",
-        dwInstanceNameOffset
+        sRobloxOffsets.dwInstanceName
     );
 
     OutputFormat(
         L"#define INSTANCE_CHILDREN_PTR_OFFSET           0x%lx\n",
-        dwChildrenOffset
+        sRobloxOffsets.dwChildren
     );
 
     OutputFormat(
         L"#define VISUALENGNE_VIEW_MATRIX_OFFSET         0x%lx\n",
-        dwViewMatrixOffset
+        sRobloxOffsets.dwViewMatrix
     );
 
     OutputFormat(
