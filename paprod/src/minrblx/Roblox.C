@@ -2,7 +2,7 @@
 File:       Roblox.C
 Purpose:    Functions to interact with Roblox client
 Author:     @discriminating
-Date:       21 December 2025
+Date:       22 December 2025
 */
 
 #include <minrblx/Roblox.H>
@@ -16,13 +16,18 @@ RobloxGetRenderView(
     _Outptr_result_nullonfailure_   __restrict  PVOID*      ppvRenderViewOut
 )
 {
-    DWORD64                     dwAddress   = PAGE_SIZE;
-    MEMORY_BASIC_INFORMATION    mbiInfo     = { 0 };
+    DWORD64                     dwAddress       = PAGE_SIZE;
+    MEMORY_BASIC_INFORMATION    mbiInfo         = { 0 };
 
-    PBYTE                       pBuffer     = NULL;
-    SIZE_T                      szBufferSz  = 0;
+    PBYTE                       pBuffer         = NULL;
+    SIZE_T                      szBufferSz      = 0;
 
-    if ( !hRoblox || hRoblox == INVALID_HANDLE_VALUE || !ppvRenderViewOut )
+    if ( !hRoblox || !ppvRenderViewOut )
+    {
+        return STATUS_INVALID_PARAMETER;
+    }
+
+    if ( hRoblox == INVALID_HANDLE_VALUE )
     {
         return STATUS_INVALID_PARAMETER;
     }
@@ -30,7 +35,7 @@ RobloxGetRenderView(
     *ppvRenderViewOut = NULL;
 
     /*
-        Walk the heap for RenderView's class instance...
+        Walk the heap for RenderView's class instance.
     */
 
     while ( dwAddress < MAX_MEMORY_ADDR )
@@ -54,7 +59,7 @@ RobloxGetRenderView(
         }
 
         /*
-            RV is in pages that are committed and always RW.
+            RenderView is in pages that are committed and always RW.
         */
 
         if ( !( mbiInfo.State == MEM_COMMIT &&
@@ -157,10 +162,6 @@ RobloxGetRenderView(
                 }
             }
 
-            /*
-                Check RTTI class
-            */
-
             if ( !IsClass(
                 hRoblox,
                 (PVOID)( dwAddress + i ),
@@ -169,19 +170,6 @@ RobloxGetRenderView(
             {
                 continue;
             }
-
-            /*
-                Not needed, probably safe to omit.
-            
-            if ( !IsClass(
-                hRoblox,
-                (PVOID)( *(DWORD64*)( pBuffer + i + ( sizeof( PVOID ) * 2 ) ) ),
-                ".?AVVisualEngine@Graphics@RBX@@"
-            ) )
-            {
-                continue;
-            }
-            */
 
             *ppvRenderViewOut = (PVOID)( dwAddress + i );
 
@@ -209,8 +197,6 @@ RobloxGetRenderView(
         );
     }
 
-    *ppvRenderViewOut = NULL;
-
     return STATUS_NOT_FOUND;
 }
 
@@ -222,16 +208,16 @@ RobloxGetDataModel(
     _Outptr_result_nullonfailure_   __restrict  PVOID*      ppvDataModelOut
 )
 {
-    DWORD64         dwAddress               = 0;
-    DWORD64         dwPointer               = 0;
-    DWORD64         dwInvalidDataModel      = 0;
-    DWORD64         dwDataModel             = 0;
+    DWORD64         dwAddress                   = 0;
+    DWORD64         dwPointer                   = 0;
+    DWORD64         dwIntermediateDataModel     = 0;
+    DWORD64         dwDataModel                 = 0;
     
-    DWORD           dwMaxSearchDepth        = DATAMODEL_SEARCH_DEPTH;
-    DWORD           dwCurrentSearchDepth    = 0;
+    DWORD           dwMaxSearchDepth            = DATAMODEL_SEARCH_DEPTH;
+    DWORD           dwCurrentSearchDepth        = 0;
 
-    static  DWORD   dwIntermediateOffset    = 0;
-    static  DWORD   dwDataModelOffset       = 0;
+    static  DWORD   dwIntermediateOffset        = 0;
+    static  DWORD   dwDataModelOffset           = 0;
 
     if ( !hRoblox || !pvRenderView || !ppvDataModelOut )
     {
@@ -246,9 +232,9 @@ RobloxGetDataModel(
         RBX::RenderView
          - xxx
          - xxx
-         - RBX::DataModel (Invalid)     <--- Weird, intermediate pointer.
+         - RBX::DataModel       <--- Weird, intermediate pointer.
             - xxx
-            - RBX::DataModel (Valid)
+            - RBX::DataModel
     */
 
     if ( dwIntermediateOffset   &&
@@ -300,9 +286,6 @@ RobloxGetDataModel(
     dwAddress = (DWORD64)pvRenderView;
 
 lblRGDMSearch:
-    /*
-        Linear scan to find the pointer to RBX::DataModel.
-    */
 
     while ( dwCurrentSearchDepth < dwMaxSearchDepth )
     {
@@ -320,7 +303,7 @@ lblRGDMSearch:
             return STATUS_UNSUCCESSFUL;
         }
 
-        if ( dwPointer == 0 ||
+        if ( !dwPointer ||
              !IsClass(
                  hRoblox,
                  (PVOID)dwPointer,
@@ -330,34 +313,26 @@ lblRGDMSearch:
             continue;
         }
 
-        if ( dwInvalidDataModel == 0 )
+        if ( !dwIntermediateDataModel )
         {
-            /*
-                RBX::RenderView -> RBX::DataModel (Intermediate) -> RBX::DataModel.
-            */
+            dwIntermediateDataModel     = dwPointer;
+            dwDataModelOffset           = dwCurrentSearchDepth;
 
-            dwInvalidDataModel      = dwPointer;
-            dwDataModelOffset       = dwCurrentSearchDepth;
-
-            dwAddress               = dwInvalidDataModel;
-            dwCurrentSearchDepth    = 0;
-
-            /*
-                Restart search from Invalid DataModel.
-            */
+            dwAddress                   = dwIntermediateDataModel;
+            dwCurrentSearchDepth        = 0;
 
             goto lblRGDMSearch;
         }
         else
         {
-            dwDataModel             = dwPointer;
-            dwIntermediateOffset    = dwCurrentSearchDepth;
+            dwDataModel                 = dwPointer;
+            dwIntermediateOffset        = dwCurrentSearchDepth;
         }
 
         break;
     }
 
-    if ( !dwDataModel || !dwInvalidDataModel )
+    if ( !dwDataModel || !dwIntermediateDataModel )
     {
         return STATUS_NOT_FOUND;
     }
@@ -535,7 +510,7 @@ RobloxFindFirstChildOfRTTIClass(
         {
             continue;
         }
-        
+
         if ( IsClass(
             hRoblox,
             pvChild,
@@ -579,14 +554,19 @@ RobloxReadString(
     SIZE_T              szStringSize    = 0;
     NTSTATUS            lStatus         = STATUS_UNSUCCESSFUL;
 
-    if ( !hRoblox || !pvInstance || !pszOutBuffer || dwBufferSize == 0 )
+    if ( !hRoblox || !pvInstance || !pszOutBuffer )
     {
         return STATUS_INVALID_PARAMETER;
     }
 
-    if ( dwBufferSize < 16 )
+    if ( dwBufferSize == 0 )
     {
-        return STATUS_BUFFER_TOO_SMALL;
+        return STATUS_INVALID_PARAMETER;
+    }
+
+    if ( dwBufferSize < sizeof( sRbxString.szString ) )
+    {
+        return STATUS_BUFFER_OVERFLOW;
     }
 
     /*
@@ -636,13 +616,13 @@ RobloxReadString(
     if ( sRbxString.dwStringLen > ROBLOX_STRING_MAX_LEN )
     {
         /*
-            Should never happen... but just in case.
+            Should never happen if process is suspended.
         */
 
         return STATUS_INTERNAL_ERROR;
     }
 
-    if ( sRbxString.dwStringLen <= 15 )
+    if ( sRbxString.dwStringLen <= 15 ) /* sizeof( sRbxString.szString ) - 1 */
     {
         /*
             Short string optimization.
@@ -655,10 +635,6 @@ RobloxReadString(
             sRbxString.dwStringLen
         ) == S_OK ) ? STATUS_SUCCESS : STATUS_BUFFER_TOO_SMALL;
     }
-
-    /*
-        Long string.
-    */
 
     pszString = sRbxString.szString.pszLongString;
 

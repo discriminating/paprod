@@ -2,13 +2,13 @@
 
 #include <nt/NtUtils.H>
 #include <rtti/RunTimeTypeInformation.H>
-#include <strsafe.h>
 
 /*
     Arbitrary search depths. TODO: Make these configurable?
 */
 
 #define DATAMODEL_SEARCH_DEPTH          0x400
+#define WORKSPACE_SEARCH_DEPTH          0x70
 #define ROBLOX_STRING_MAX_LEN           100
 
 #define ROBLOX_MINIMUM_WINDOW_WIDTH     801.0f

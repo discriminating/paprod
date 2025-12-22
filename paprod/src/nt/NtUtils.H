@@ -9,6 +9,8 @@
 #include <ntstatus.h>
 #pragma warning(pop)
 
+#include <strsafe.h>
+
 #pragma warning(disable:5045)
 #pragma warning(disable:4711)
 

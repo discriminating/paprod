@@ -1,9 +1,6 @@
 #pragma once
 
-#pragma warning(push)
-#pragma warning(disable:4668)
-#include <windows.h>
-#pragma warning(pop)
+#include <nt/NtUtils.H>
 
 #pragma warning(disable:5045)
 
@@ -13,6 +10,8 @@ struct TypeDescriptor
     PVOID		    pSpare;
     CHAR		    szName[128];
 };
+
+#define TYPE_DESCRIPTOR_NAME_SIZE sizeof( ( (struct TypeDescriptor*)0 )->szName )
 
 struct RTTICompleteObjectLocator
 {

@@ -2,7 +2,7 @@
 File:       LinearSearch.C
 Purpose:    Linear search functions for memory scanning
 Author:     @discriminating
-Date:       21 December 2025
+Date:       22 December 2025
 */
 
 #include <dumper/LinearSearch.H>
@@ -43,7 +43,7 @@ LinearSearchForClass(
     {
         bRet = ReadProcessMemory(
             hRoblox,
-            (LPCVOID) ( (DWORD64) pvStart + dwSearch ),
+            (LPCVOID)( (DWORD64)pvStart + dwSearch ),
             &pvAddress,
             sizeof( PVOID ),
             NULL
@@ -53,7 +53,7 @@ LinearSearchForClass(
         {
             OutputFormat(
                 L"Warning: LinearSearchForClass: ReadProcessMemory failed at %ph because %lu\n",
-                (LPCVOID) ( (DWORD64) pvStart + dwSearch ),
+                (LPCVOID)( (DWORD64)pvStart + dwSearch ),
                 GetLastError()
             );
 
@@ -88,12 +88,12 @@ LinearSearchForWorkspace(
     _Outptr_result_nullonfailure_   __restrict  PVOID*  pvOutWorkspace
 )
 {
-    PVOID   pvAddress   = 0;
+    PVOID   pvAddress       = 0;
     
-    DWORD   dwSearch    = 0;
-    DWORD   dwMaxSearch = sizeof( PVOID ) * 50;
+    DWORD   dwSearch        = 0;
+    DWORD   dwMaxSearch     = sizeof( PVOID ) * WORKSPACE_SEARCH_DEPTH;
 
-    BOOL    bRet        = FALSE;
+    BOOL    bRet            = FALSE;
 
     if ( !hRoblox || !pvDataModel || !pvOutWorkspace )
     {
@@ -114,7 +114,7 @@ LinearSearchForWorkspace(
         {
             OutputFormat(
                 L"Warning: LinearSearchForWorkspace: ReadProcessMemory failed at %ph because %lu\n",
-                (LPCVOID) ( (DWORD64) pvDataModel + dwSearch ),
+                (LPCVOID)( (DWORD64)pvDataModel + dwSearch ),
                 GetLastError()
             );
 
@@ -166,7 +166,7 @@ LinearSearchForString(
         See RobloxReadString for string structure.
     */
 
-    if ( strlen( szString ) > 15 )
+    if ( strlen( szString ) > ( sizeof( ( (struct _ROBLOX_STRING *)0 )->szString ) - 1) ) /* 15 */
     {
         return STATUS_INVALID_PARAMETER;
     }
@@ -174,11 +174,11 @@ LinearSearchForString(
     for ( DWORD dwSearch = 0; dwSearch < ( dwAlignment * dwMaxSearch ); dwSearch += dwAlignment )
     {
         PVOID   pvAddress       = 0;
-        CHAR    szBuffer[16]    = { 0 };
+        CHAR    szBuffer[16]    = { 0 }; /* sizeof( ( (struct _ROBLOX_STRING *)0 )->szString */
 
         if ( !ReadProcessMemory(
             hRoblox,
-            (LPCVOID) ( (DWORD64) pvStart + dwSearch ),
+            (LPCVOID)( (DWORD64)pvStart + dwSearch ),
             &pvAddress,
             sizeof( PVOID ),
             NULL
@@ -186,7 +186,7 @@ LinearSearchForString(
         {
             OutputFormat(
                 L"Warning: LinearSearchForString: ReadProcessMemory failed at %ph because %lu\n",
-                (LPCVOID) ( (DWORD64) pvStart + dwSearch ),
+                (LPCVOID)( (DWORD64)pvStart + dwSearch ),
                 GetLastError()
             );
 
@@ -205,7 +205,7 @@ LinearSearchForString(
 
         if ( !ReadProcessMemory(
             hRoblox,
-            (LPCVOID) pvAddress,
+            (LPCVOID)pvAddress,
             &szBuffer,
             sizeof( szBuffer ) - 1,
             NULL
@@ -213,7 +213,7 @@ LinearSearchForString(
         {
             OutputFormat(
                 L"Warning: LinearSearchForString: ReadProcessMemory failed at %ph because %lu\n",
-                (LPCVOID) pvAddress,
+                (LPCVOID)pvAddress,
                 GetLastError()
             );
 
@@ -267,7 +267,7 @@ LinearSearchForChildren(
 
         bRet = ReadProcessMemory(
             hRoblox,
-            (LPCVOID) ( (DWORD64)pvStart + dwSearch ),
+            (LPCVOID)( (DWORD64)pvStart + dwSearch ),
             &pvAddress,
             sizeof( PVOID ),
             NULL
@@ -277,7 +277,7 @@ LinearSearchForChildren(
         {
             OutputFormat(
                 L"Warning: LinearSearchForChildren: ReadProcessMemory failed at %ph because %lu\n",
-                (LPCVOID) ( (DWORD64)pvStart + dwSearch ),
+                (LPCVOID)( (DWORD64)pvStart + dwSearch ),
                 GetLastError()
             );
 
@@ -317,7 +317,7 @@ LinearSearchForChildren(
         {
             OutputFormat(
                 L"Warning: LinearSearchForChildren: ReadProcessMemory for children ptr failed at %ph because %lu\n",
-                (LPCVOID) ( (DWORD64)pvStart + dwSearch ),
+                (LPCVOID)( (DWORD64)pvStart + dwSearch ),
                 GetLastError()
             );
 
@@ -365,7 +365,7 @@ LinearSearchForChildren(
         {
             OutputFormat(
                 L"Warning: LinearSearchForChildren: ReadProcessMemory for list end failed at %ph because %lu\n",
-                (LPCVOID) ( (DWORD64) pvChildrenPtr + sizeof(PVOID) ),
+                (LPCVOID)( (DWORD64)pvChildrenPtr + sizeof(PVOID) ),
                 GetLastError()
             );
 
@@ -387,7 +387,7 @@ LinearSearchForChildren(
             if it's a valid Roblox class.
         */
 
-        dwChildCount = (DWORD) ( (DWORD64) pvListEnd - (DWORD64) pvListStart ) / ( sizeof( PVOID ) * 2 );
+        dwChildCount = (DWORD)( (DWORD64)pvListEnd - (DWORD64)pvListStart ) / ( sizeof( PVOID ) * 2 );
 
         if ( dwChildCount == 0 )
         {
@@ -415,7 +415,7 @@ LinearSearchForChildren(
 
         for ( DWORD i = 0; i < dwChildCount; i++ )
         {
-            pvChild = *(PVOID*) ( (DWORD64) pChildrenBuff + ( i * sizeof( PVOID ) * 2 ) );
+            pvChild = *(PVOID*)( (DWORD64)pChildrenBuff + ( i * sizeof( PVOID ) * 2 ) );
 
             if ( !pvChild )
             {
@@ -460,7 +460,7 @@ LinearSearchForProjectionViewMatrix(
     
     for ( DWORD dwSearch = 0; dwSearch < ( sizeof( PVOID ) * dwMaxSearch ); dwSearch += sizeof( PVOID ) )
     {
-        PVOID       pvAddress       = (PVOID) ( (DWORD64)pvVisualEngine + dwSearch );
+        PVOID       pvAddress       = (PVOID)( (DWORD64)pvVisualEngine + dwSearch );
         
         BOOL        bHasNaN         = FALSE;
         
@@ -600,12 +600,12 @@ LinearSearchForViewportSize(
         ViewportSize is the un-scaled client size in pixels.
     */
     
-    fExpectedWidth    = (FLOAT) rcRoblox.right    * 96.0f / (FLOAT) nDPIX;
-    fExpectedHeight   = (FLOAT) rcRoblox.bottom   * 96.0f / (FLOAT) nDPIY;
+    fExpectedWidth    = (FLOAT)rcRoblox.right    * 96.0f / (FLOAT)nDPIX;
+    fExpectedHeight   = (FLOAT)rcRoblox.bottom   * 96.0f / (FLOAT)nDPIY;
 
     for ( DWORD dwSearch = 0; dwSearch < ( sizeof( PVOID ) * dwMaxSearch ); dwSearch += sizeof( PVOID ) )
     {
-        PVOID           pvAddress       = (PVOID) ( (DWORD64)pvVisualEngine + dwSearch );
+        PVOID           pvAddress       = (PVOID)( (DWORD64)pvVisualEngine + dwSearch );
         
         ViewportSize    vsViewportSize  = { 0 };
         

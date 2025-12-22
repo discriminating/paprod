@@ -2,7 +2,7 @@
 File:       NtUtils.C
 Purpose:    Memory functions, NT functions
 Author:     @discriminating
-Date:       20 December 2025
+Date:       22 December 2025
 */
 
 #include <nt/NtUtils.H>
@@ -155,8 +155,8 @@ IsValidPointer(
         return STATUS_INVALID_PARAMETER;
     }
 
-    if ( (DWORD64) pVirtualAddress < PAGE_SIZE ||
-        (DWORD64) pVirtualAddress > MAX_MEMORY_ADDR )
+    if ( (DWORD64)pVirtualAddress < PAGE_SIZE ||
+        (DWORD64)pVirtualAddress > MAX_MEMORY_ADDR )
     {
         return STATUS_UNSUCCESSFUL;
     }

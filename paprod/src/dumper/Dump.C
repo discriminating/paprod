@@ -2,7 +2,7 @@
 File:       Dump.C
 Purpose:    Functions to dump Roblox offsets
 Author:     @discriminating
-Date:       21 December 2025
+Date:       22 December 2025
 */
 
 #include <dumper/Dump.H>
@@ -359,7 +359,7 @@ lblSkipClassDescriptorName:
         szTempName
     );
 
-    if ( !NT_SUCCESS( lStatus ) && lStatus != STATUS_BUFFER_TOO_SMALL )
+    if ( !NT_SUCCESS( lStatus ) && lStatus != STATUS_BUFFER_OVERFLOW )
     {
         OutputFormat(
             L"Error: Failed to read instance name string (0x%08X).\n",
