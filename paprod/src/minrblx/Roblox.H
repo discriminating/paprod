@@ -8,8 +8,11 @@
     Arbitrary search depths. TODO: Make these configurable?
 */
 
-#define DATAMODEL_SEARCH_DEPTH      0x400
-#define ROBLOX_STRING_MAX_LEN       100
+#define DATAMODEL_SEARCH_DEPTH          0x400
+#define ROBLOX_STRING_MAX_LEN           100
+
+#define ROBLOX_MINIMUM_WINDOW_WIDTH     801.0f
+#define ROBLOX_MINIMUM_WINDOW_HEIGHT    596.0f
 
 typedef struct RBX_ViewMatrix
 {

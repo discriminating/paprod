@@ -546,14 +546,17 @@ LinearSearchForViewportSize(
         return STATUS_INVALID_PARAMETER;
     }
 
-    HMONITOR    hMonitor        = NULL;
+    HMONITOR    hMonitor            = NULL;
 
-    HWND        hwndRoblox      = NULL;
+    HWND        hwndRoblox          = NULL;
 
-    RECT        rcRoblox       = { 0 };
+    RECT        rcRoblox            = { 0 };
 
-    UINT        nDPIX           = 0;
-    UINT        nDPIY           = 0;
+    UINT        nDPIX               = 0;
+    UINT        nDPIY               = 0;
+
+    FLOAT       fExpectedWidth      = 0.0f;
+    FLOAT       fExpectedHeight     = 0.0f;
 
     hwndRoblox = FindWindowW(
         NULL,
@@ -593,6 +596,13 @@ LinearSearchForViewportSize(
         return STATUS_UNSUCCESSFUL;
     }
 
+    /*
+        ViewportSize is the un-scaled client size in pixels.
+    */
+    
+    fExpectedWidth    = (FLOAT) rcRoblox.right    * 96.0f / (FLOAT) nDPIX;
+    fExpectedHeight   = (FLOAT) rcRoblox.bottom   * 96.0f / (FLOAT) nDPIY;
+
     for ( DWORD dwSearch = 0; dwSearch < ( sizeof( PVOID ) * dwMaxSearch ); dwSearch += sizeof( PVOID ) )
     {
         PVOID           pvAddress       = (PVOID) ( (DWORD64)pvVisualEngine + dwSearch );
@@ -631,24 +641,11 @@ LinearSearchForViewportSize(
             continue;
         }
 
-        /*
-            Minimum Roblox client window size
-        */
-
-        if ( vsViewportSize.fWidth < 800.0f ||
-             vsViewportSize.fHeight < 580.0f )
+        if ( vsViewportSize.fWidth  < ROBLOX_MINIMUM_WINDOW_WIDTH   ||
+             vsViewportSize.fHeight < ROBLOX_MINIMUM_WINDOW_HEIGHT )
         {
             continue;
         }
-
-        /*
-            To find the ViewportSize, we de-scale the Roblox
-            window size by the DPI, as the ViewportSize is
-            not DPI-scaled in memory.
-        */
-
-        FLOAT fExpectedWidth    = (FLOAT) rcRoblox.right    * 96.0f / (FLOAT) nDPIX;
-        FLOAT fExpectedHeight   = (FLOAT) rcRoblox.bottom   * 96.0f / (FLOAT) nDPIY;
 
         if ( fabsf( vsViewportSize.fWidth  - fExpectedWidth )  > 1.0f   ||
              fabsf( vsViewportSize.fHeight - fExpectedHeight ) > 1.0f )

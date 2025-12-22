@@ -16,13 +16,18 @@ OutputFormat(
 )
 {
     if ( !g_hRichEditOutput || !lpFormat )
+    {
         return;
+    }
     
     INT         nLength             = 0;
     WCHAR       szBuffer[ 4096 ]    = { 0 };
     va_list     args;
     
-    va_start( args, lpFormat );
+    va_start(
+        args,
+        lpFormat
+    );
     
     (VOID)vswprintf_s(
         szBuffer,
@@ -38,15 +43,15 @@ OutputFormat(
     (VOID)SendMessageW(
         g_hRichEditOutput,
         EM_SETSEL,
-        (WPARAM) nLength,
-        (LPARAM) nLength
+        (WPARAM)nLength,
+        (LPARAM)nLength
     );
 
     (VOID)SendMessageW(
         g_hRichEditOutput,
         EM_REPLACESEL,
         FALSE,
-        (LPARAM) szBuffer
+        (LPARAM)szBuffer
     );
 }
 
@@ -93,7 +98,7 @@ WindowProcedureW(
                 30,
                 hWnd,
                 (HMENU) IDC_CHECKBOX_CLIENT,
-                ( (LPCREATESTRUCT) lParam )->hInstance,
+                ( (LPCREATESTRUCT)lParam )->hInstance,
                 NULL
             );
 
@@ -145,7 +150,7 @@ WindowProcedureW(
                 30,
                 hWnd,
                 (HMENU)IDC_CHECKBOX_FAST_RENDERVIEW_SCAN,
-                ( (LPCREATESTRUCT) lParam )->hInstance,
+                ( (LPCREATESTRUCT)lParam )->hInstance,
                 NULL
             );
 
