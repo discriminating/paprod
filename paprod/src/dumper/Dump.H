@@ -5,6 +5,7 @@
 #define ARBITRARY_SEARCH_DEPTH                  50
 #define PROJECTION_VIEW_MATRIX_SEARCH_DEPTH     170
 #define VIEWPORT_SIZE_SEARCH_DEPTH              270
+#define MODELINSTANCE_SEARCH_DEPTH              170
 
 typedef struct _ROBLOX_OFFSETS
 {
@@ -24,7 +25,7 @@ typedef struct _ROBLOX_OFFSETS
         Need to be in-game.
     */
 
-    /*DWORD   dwModelInstance;*/
+    DWORD   dwModelInstance;
     /*DWORD   dwPrimitive;*/
     /*DWORD   dwCFrame;*/
     /*DWORD   dwHumanoid;*/

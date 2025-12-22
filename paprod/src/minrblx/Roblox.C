@@ -429,6 +429,142 @@ RobloxBatchGetChildren(
 
 _Success_( return == STATUS_SUCCESS )
 NTSTATUS
+RobloxFindFirstChildOfRTTIClass(
+    _In_                                        HANDLE      hRoblox,
+    _In_                                        PVOID       pvInstance,
+    _In_                                        DWORD       dwChildrenOffset,
+    _In_                                        PCSTR       pszRTTIClassName,
+    _Outptr_result_nullonfailure_   __restrict  PVOID*      ppvChildOut
+)
+{
+    if ( !hRoblox || !pvInstance || !pszRTTIClassName || !ppvChildOut )
+    {
+        return STATUS_INVALID_PARAMETER;
+    }
+
+    *ppvChildOut = NULL;
+
+    /*
+        RBX::Instance
+         - xxx
+         - xxx
+         - Pointer to children              (PVOID)
+            - Pointer to start of list      (PVOID)
+                - Ptr to child 1            (PVOID)
+                - Ptr to child 1 deleter    (PVOID)
+                - Ptr to child 2            (PVOID)
+                - Ptr to child 2 deleter    (PVOID)
+                ...
+            - Pointer to end of list        (PVOID)
+    */
+
+    NTSTATUS    lStatus                 = STATUS_SUCCESS;
+
+    PVOID       pvChildrenClassPtr      = NULL;
+    PVOID       pvChildrenStart         = NULL;
+    PVOID       pvChildrenEnd           = NULL;
+    PVOID       pChildrenBuff           = NULL;
+
+    PVOID       pvChild                 = NULL;
+
+
+    DWORD       dwChildrenCount         = 0;
+
+    PVOID       pPointersBuff[2]        = { 0 };
+
+    if ( !ReadProcessMemory(
+        hRoblox,
+        (LPCVOID)( (DWORD64)pvInstance + dwChildrenOffset ),
+        &pvChildrenClassPtr,
+        sizeof( pvChildrenClassPtr ),
+        NULL
+    ) )
+    {
+        return STATUS_UNSUCCESSFUL;
+    }
+
+    if ( !pvChildrenClassPtr )
+    {
+        return STATUS_NOT_FOUND;
+    }
+
+    if ( !ReadProcessMemory(
+        hRoblox,
+        pvChildrenClassPtr,
+        &pPointersBuff,
+        sizeof( pPointersBuff ),
+        NULL
+    ) )
+    {
+        return STATUS_UNSUCCESSFUL;
+    }
+
+    pvChildrenStart     = pPointersBuff[0];
+    pvChildrenEnd       = pPointersBuff[1];
+
+    dwChildrenCount     = 
+        (DWORD)( (DWORD64)pvChildrenEnd - (DWORD64)pvChildrenStart ) / ( sizeof( PVOID ) * 2 );
+
+    if ( dwChildrenCount == 0 )
+    {
+        return STATUS_NOT_FOUND;
+    }
+
+    if ( !pvChildrenStart || !pvChildrenEnd || pvChildrenStart >= pvChildrenEnd )
+    {
+        return STATUS_NOT_FOUND;
+    }
+
+    lStatus = RobloxBatchGetChildren(
+        hRoblox,
+        pvChildrenStart,
+        &pChildrenBuff,
+        dwChildrenCount
+    );
+
+    if ( !NT_SUCCESS( lStatus ) || !pChildrenBuff )
+    {
+        return lStatus;
+    }
+
+    for ( DWORD i = 0; i < dwChildrenCount; i++ )
+    {
+        pvChild = *(PVOID*)( (DWORD64)pChildrenBuff + ( i * sizeof( PVOID ) * 2 ) );
+        
+        if ( !pvChild )
+        {
+            continue;
+        }
+        
+        if ( IsClass(
+            hRoblox,
+            pvChild,
+            pszRTTIClassName
+        ) )
+        {
+            *ppvChildOut = pvChild;
+            
+            (VOID)VirtualFree(
+                pChildrenBuff,
+                0,
+                MEM_RELEASE
+            );
+            
+            return STATUS_SUCCESS;
+        }
+    }
+
+    (VOID)VirtualFree(
+        pChildrenBuff,
+        0,
+        MEM_RELEASE
+    );
+
+    return STATUS_NOT_FOUND;
+}
+
+_Success_( return == STATUS_SUCCESS )
+NTSTATUS
 RobloxReadString(
     _In_                            HANDLE          hRoblox,
     _In_                            PVOID           pvInstance,

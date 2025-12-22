@@ -71,6 +71,16 @@ RobloxBatchGetChildren(
 
 _Success_( return == STATUS_SUCCESS )
 NTSTATUS
+RobloxFindFirstChildOfRTTIClass(
+    _In_                                        HANDLE      hRoblox,
+    _In_                                        PVOID       pvInstance,
+    _In_                                        DWORD       dwChildrenOffset,
+    _In_                                        PCSTR       pszRTTIClassName,
+    _Outptr_result_nullonfailure_   __restrict  PVOID*      ppvChildOut
+);
+
+_Success_( return == STATUS_SUCCESS )
+NTSTATUS
 RobloxReadString(
     _In_                            HANDLE          hRoblox,
     _In_                            PVOID           pvInstance,

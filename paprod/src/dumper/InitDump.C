@@ -148,6 +148,11 @@ PrintOffsets(
     );
 
     OutputFormat(
+        L"#define PLAYER_MODEL_INSTANCE_OFFSET           0x%lx\n",
+        psRobloxOffsets->dwModelInstance
+    );
+
+    OutputFormat(
         L"\n=====================================================================\n"
     );
 }

@@ -129,8 +129,12 @@ DumpOffsets(
     PVOID           pvRenderView            = 0x0;
     PVOID           pvDataModel             = 0x0;
     PVOID           pvWorkspace             = 0x0;
-    PVOID           pvClassDescriptor       = 0x0;
     PVOID           pvVisualEngine          = 0x0;
+    PVOID           pvPlayers               = 0x0;
+
+    PVOID           pvFirstPlayer           = 0x0;
+
+    PVOID           pvClassDescriptor       = 0x0;
 
     CHAR    szTempName[ ROBLOX_STRING_MAX_LEN + 1 ]     = { 0 };
 
@@ -407,7 +411,7 @@ lblSkipClassDescriptorName:
     }
 
     /*
-        RenderView->VisualEngine->ViewportSize
+        VisualEngine->ViewportSize
     */
 
     if ( pvVisualEngine )
@@ -426,6 +430,92 @@ lblSkipClassDescriptorName:
                 lStatus
             );
         }
+    }
+
+    /*
+        DataModel->Children[Players]
+    */
+
+    if ( !psRobloxOffsets->dwChildren )
+    {
+        OutputFormat(
+            L"Error: Failed to find critical offset Instance->Children.\n"
+        );
+
+        goto lblFail;
+    }
+
+    lStatus = RobloxFindFirstChildOfRTTIClass(
+        hRoblox,
+        pvDataModel,
+        psRobloxOffsets->dwChildren,
+        ".?AVPlayers@RBX@@",
+        &pvPlayers
+    );
+
+    if ( !NT_SUCCESS( lStatus ) || !pvPlayers )
+    {
+        OutputFormat(
+            L"Error: Could not find DataModel->Children[RBX::Players] (0x%08X). Are you in a game?\n",
+            lStatus
+        );
+
+        goto lblFail;
+    }
+
+    OutputFormat(
+        L"Ok: Found Players instance at address 0x%p.\n",
+        pvPlayers
+    );
+
+    /*
+        Get the first player.
+    */
+
+    lStatus = RobloxFindFirstChildOfRTTIClass(
+        hRoblox,
+        pvPlayers,
+        psRobloxOffsets->dwChildren,
+        ".?AVPlayer@RBX@@",
+        &pvFirstPlayer
+    );
+
+    if ( !NT_SUCCESS( lStatus ) || !pvFirstPlayer )
+    {
+        OutputFormat(
+            L"Error: Could not find first Player instance (0x%08X).\n",
+            lStatus
+        );
+
+        goto lblFail;
+    }
+
+    OutputFormat(
+        L"Ok: Found first Player instance at address 0x%p.\n",
+        pvFirstPlayer
+    );
+
+    /*
+        Player->ModelInstance
+    */
+
+    lStatus = LinearSearchForClass(
+        hRoblox,
+        pvFirstPlayer,
+        ".?AVModelInstance@RBX@@",
+        MODELINSTANCE_SEARCH_DEPTH,
+        sizeof( PVOID ),
+        &psRobloxOffsets->dwModelInstance
+    );
+
+    if ( !NT_SUCCESS( lStatus ) || !psRobloxOffsets->dwModelInstance )
+    {
+        OutputFormat(
+            L"Error: Failed to find critical offset Player->ModelInstance (0x%08X).\n",
+            lStatus
+        );
+
+        goto lblFail;
     }
 
     bRet = TRUE;
