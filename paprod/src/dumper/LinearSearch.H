@@ -22,7 +22,7 @@ NTSTATUS
 LinearSearchForWorkspace(
     _In_                            HANDLE  hRoblox,
     _In_                            PVOID   pvDataModel,
-    _Outptr_result_nullonfailure_   PVOID*  pvOutWorkspace
+    _Outptr_result_nullonfailure_   PVOID*  pvWorkspaceOut
 );
 
 _Success_( return == STATUS_SUCCESS )
@@ -33,7 +33,7 @@ LinearSearchForString(
     _In_z_      CHAR*       szString,
     _In_        DWORD       dwMaxSearch,
     _In_        DWORD       dwAlignment,
-    _Out_       DWORD*      pdwOffsetOut
+    _Out_       DWORD*      pdwStringOffsetOut
 );
 
 _Success_( return == STATUS_SUCCESS )
@@ -42,7 +42,7 @@ LinearSearchForChildren(
     _In_        HANDLE      hRoblox,
     _In_        PVOID       pvStart,
     _In_        DWORD       dwMaxSearch,
-    _Out_       DWORD*      pdwOffsetOut
+    _Out_       DWORD*      pdwChildrenOffsetOut
 );
 
 _Success_( return == STATUS_SUCCESS )
@@ -61,4 +61,13 @@ LinearSearchForViewportSize(
     _In_        PVOID       pvVisualEngine,
     _In_        DWORD       dwMaxSearch,
     _Out_       DWORD*      pdwViewportSizeOffset
+);
+
+_Success_( return == STATUS_SUCCESS )
+NTSTATUS
+LinearSearchForCFrame(
+    _In_    HANDLE  hRoblox,
+    _In_    PVOID   pvPrimitive,
+    _In_    DWORD   dwMaxSearch,
+    _Out_   DWORD*  pdwCFrameOffsetOut
 );

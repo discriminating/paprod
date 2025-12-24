@@ -21,9 +21,25 @@ typedef struct RBX_ViewMatrix
 
 typedef struct RBX_ViewportSize
 {
-    FLOAT   fWidth;
-    FLOAT   fHeight;
+    FLOAT fWidth;
+    FLOAT fHeight;
 } ViewportSize, *PViewportSize;
+
+typedef struct RBX_Vector3
+{
+    FLOAT X;
+    FLOAT Y;
+    FLOAT Z;
+} Vector3, * PVector3;
+
+typedef struct RBX_CFrame
+{
+    FLOAT m00, m10, m20;
+    FLOAT m01, m11, m21;
+    FLOAT m02, m12, m22;
+
+    Vector3 v3Position;
+} CFrame, *PCFrame;
 
 /*
     Modified from std string SSO? Maybe...
@@ -71,20 +87,31 @@ RobloxBatchGetChildren(
 
 _Success_( return == STATUS_SUCCESS )
 NTSTATUS
+RobloxReadName(
+    _In_                            HANDLE      hRoblox,
+    _In_                            PVOID       pvInstance,
+    _In_                            DWORD       dwNameOffset,
+    _In_                            DWORD       dwBufferSize,
+    _Out_writes_z_( dwBufferSize )  PCHAR       pszOutBuffer
+);
+
+_Success_( return == STATUS_SUCCESS )
+NTSTATUS
 RobloxFindFirstChildOfRTTIClass(
     _In_                            HANDLE      hRoblox,
     _In_                            PVOID       pvInstance,
     _In_                            DWORD       dwChildrenOffset,
-    _In_                            PCSTR       pszRTTIClassName,
+    _In_z_                          PCSTR       pszRTTIClassName,
     _Outptr_result_nullonfailure_   PVOID*      ppvChildOut
 );
 
 _Success_( return == STATUS_SUCCESS )
 NTSTATUS
-RobloxReadString(
+RobloxFindFirstChildOfName(
     _In_                            HANDLE      hRoblox,
     _In_                            PVOID       pvInstance,
-    _In_                            DWORD       dwStringOffset,
-    _In_                            DWORD       dwBufferSize,
-    _Out_writes_z_( dwBufferSize )  PCHAR       pszOutBuffer
+    _In_                            DWORD       dwChildrenOffset,
+    _In_                            DWORD       dwNameOffset,
+    _In_z_                          PCSTR       pszName,
+    _Outptr_result_nullonfailure_   PVOID*      ppvChildOut
 );

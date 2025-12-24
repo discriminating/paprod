@@ -2,7 +2,7 @@
 File:       Roblox.C
 Purpose:    Functions to interact with Roblox client
 Author:     @discriminating
-Date:       23 December 2025
+Date:       24 December 2025
 */
 
 #include <minrblx/Roblox.H>
@@ -402,11 +402,144 @@ RobloxBatchGetChildren(
 
 _Success_( return == STATUS_SUCCESS )
 NTSTATUS
+RobloxReadName(
+    _In_                            HANDLE      hRoblox,
+    _In_                            PVOID       pvInstance,
+    _In_                            DWORD       dwNameOffset,
+    _In_                            DWORD       dwBufferSize,
+    _Out_writes_z_( dwBufferSize )  PCHAR       pszOutBuffer
+)
+{
+    ROBLOX_STRING       sRbxString      = { 0 };
+    PCHAR               pszString       = NULL;
+    PVOID               pvStringPtr     = NULL;
+    SIZE_T              szStringSize    = 0;
+    NTSTATUS            lStatus         = STATUS_UNSUCCESSFUL;
+
+    if ( !hRoblox || !pvInstance || !pszOutBuffer )
+    {
+        return STATUS_INVALID_PARAMETER;
+    }
+
+    if ( dwBufferSize == 0 )
+    {
+        return STATUS_INVALID_PARAMETER;
+    }
+
+    if ( dwBufferSize < sizeof( sRbxString.szString ) )
+    {
+        return STATUS_BUFFER_OVERFLOW;
+    }
+
+    /*
+        Structure:
+
+        RBX::Instance
+         - ...
+         - Pointer to string (dwStringOffset)
+            - ROBLOX_STRING
+           {
+                - Union:
+                    - PCHAR pszLongString;
+                    - CHAR  szShortString[16];
+                - DWORD32 dwStringLen;
+           }
+    */
+
+    if ( !ReadProcessMemory(
+        hRoblox,
+        (LPCVOID)( (DWORD64)pvInstance + dwNameOffset ),
+        &pvStringPtr,
+        sizeof( PVOID ),
+        NULL
+    ) )
+    {
+        return STATUS_UNSUCCESSFUL;
+    }
+
+    if ( !ReadProcessMemory(
+        hRoblox,
+        (LPCVOID)pvStringPtr,
+        &sRbxString,
+        sizeof( ROBLOX_STRING ),
+        NULL
+    ) )
+    {
+        return STATUS_UNSUCCESSFUL;
+    }
+
+    if ( sRbxString.dwStringLen == 0 )
+    {
+        pszOutBuffer[0] = '\0';
+        
+        return STATUS_SUCCESS;
+    }
+
+    if ( sRbxString.dwStringLen > ROBLOX_STRING_MAX_LEN )
+    {
+        /*
+            Should never happen if process is suspended.
+        */
+
+        return STATUS_INTERNAL_ERROR;
+    }
+
+    if ( sRbxString.dwStringLen <= 15 ) /* sizeof( sRbxString.szString ) - 1 */
+    {
+        /*
+            Short string optimization.
+        */
+
+        return ( StringCchCopyNA(
+            pszOutBuffer,
+            dwBufferSize,
+            sRbxString.szString.szShortString,
+            sRbxString.dwStringLen
+        ) == S_OK ) ? STATUS_SUCCESS : STATUS_BUFFER_TOO_SMALL;
+    }
+
+    pszString = sRbxString.szString.pszLongString;
+
+    if ( !IS_VALID_POINTER( hRoblox, pszString ) )
+    {
+        return STATUS_UNSUCCESSFUL;
+    }
+
+    if ( sRbxString.dwStringLen < dwBufferSize )
+    {
+        szStringSize    = sRbxString.dwStringLen;
+        lStatus         = STATUS_SUCCESS;
+    }
+    else
+    {
+        szStringSize    = dwBufferSize - 1;
+        lStatus         = STATUS_BUFFER_TOO_SMALL;
+    }
+
+    if ( !ReadProcessMemory(
+        hRoblox,
+        (LPCVOID)pszString,
+        pszOutBuffer,
+        szStringSize,
+        NULL
+    ) )
+    {
+        return STATUS_UNSUCCESSFUL;
+    }
+
+#pragma warning(suppress: 6386) /* pszOutBuffer is guaranteed to be at least szStringSize + 1... seriously, MSVC... */
+    pszOutBuffer[szStringSize] = '\0';
+
+    return lStatus;
+}
+
+_Success_( return == STATUS_SUCCESS )
+NTSTATUS
 RobloxFindFirstChildOfRTTIClass(
     _In_                            HANDLE      hRoblox,
     _In_                            PVOID       pvInstance,
     _In_                            DWORD       dwChildrenOffset,
-    _In_                            PCSTR       pszRTTIClassName,
+    _In_z_                          PCSTR       pszRTTIClassName,
     _Outptr_result_nullonfailure_   PVOID*      ppvChildOut
 )
 {
@@ -538,133 +671,152 @@ RobloxFindFirstChildOfRTTIClass(
 
 _Success_( return == STATUS_SUCCESS )
 NTSTATUS
-RobloxReadString(
+RobloxFindFirstChildOfName(
     _In_                            HANDLE      hRoblox,
     _In_                            PVOID       pvInstance,
-    _In_                            DWORD       dwStringOffset,
-    _In_                            DWORD       dwBufferSize,
-    _Out_writes_z_( dwBufferSize )  PCHAR       pszOutBuffer
+    _In_                            DWORD       dwChildrenOffset,
+    _In_                            DWORD       dwNameOffset,
+    _In_z_                          PCSTR       pszName,
+    _Outptr_result_nullonfailure_   PVOID*      ppvChildOut
 )
 {
-    ROBLOX_STRING       sRbxString      = { 0 };
-    PCHAR               pszString       = NULL;
-    PVOID               pvStringPtr     = NULL;
-    SIZE_T              szStringSize    = 0;
-    NTSTATUS            lStatus         = STATUS_UNSUCCESSFUL;
-
-    if ( !hRoblox || !pvInstance || !pszOutBuffer )
+    if ( !hRoblox || !pvInstance || !pszName || !ppvChildOut )
     {
         return STATUS_INVALID_PARAMETER;
     }
 
-    if ( dwBufferSize == 0 )
-    {
-        return STATUS_INVALID_PARAMETER;
-    }
-
-    if ( dwBufferSize < sizeof( sRbxString.szString ) )
-    {
-        return STATUS_BUFFER_OVERFLOW;
-    }
+    *ppvChildOut = NULL;
 
     /*
-        Structure:
-
         RBX::Instance
-         - ...
-         - Pointer to string (dwStringOffset)
-            - ROBLOX_STRING
-           {
-                - Union:
-                    - PCHAR pszLongString;
-                    - CHAR  szShortString[16];
-                - DWORD32 dwStringLen;
-           }
+         - xxx
+         - xxx
+         - Pointer to children              (PVOID)
+            - Pointer to start of list      (PVOID)
+                - Ptr to child 1            (PVOID)
+                - Ptr to child 1 deleter    (PVOID)
+                - Ptr to child 2            (PVOID)
+                - Ptr to child 2 deleter    (PVOID)
+                ...
+            - Pointer to end of list        (PVOID)
     */
 
+    NTSTATUS    lStatus                 = STATUS_SUCCESS;
+
+    PVOID       pvChildrenClassPtr      = NULL;
+    PVOID       pvChildrenStart         = NULL;
+    PVOID       pvChildrenEnd           = NULL;
+    PVOID       pChildrenBuff           = NULL;
+
+    PVOID       pvChild                 = NULL;
+
+
+    DWORD       dwChildrenCount         = 0;
+
+    PVOID       pPointersBuff[2]        = { 0 };
+
     if ( !ReadProcessMemory(
         hRoblox,
-        (LPCVOID)( (DWORD64)pvInstance + dwStringOffset ),
-        &pvStringPtr,
-        sizeof( PVOID ),
+        (LPCVOID)( (DWORD64)pvInstance + dwChildrenOffset ),
+        &pvChildrenClassPtr,
+        sizeof( pvChildrenClassPtr ),
         NULL
     ) )
     {
         return STATUS_UNSUCCESSFUL;
     }
 
+    if ( !pvChildrenClassPtr )
+    {
+        return STATUS_NOT_FOUND;
+    }
+
     if ( !ReadProcessMemory(
         hRoblox,
-        (LPCVOID)pvStringPtr,
-        &sRbxString,
-        sizeof( ROBLOX_STRING ),
+        pvChildrenClassPtr,
+        &pPointersBuff,
+        sizeof( pPointersBuff ),
         NULL
     ) )
     {
         return STATUS_UNSUCCESSFUL;
     }
 
-    if ( sRbxString.dwStringLen == 0 )
+    pvChildrenStart     = pPointersBuff[0];
+    pvChildrenEnd       = pPointersBuff[1];
+
+    dwChildrenCount     = 
+        (DWORD)( (DWORD64)pvChildrenEnd - (DWORD64)pvChildrenStart ) / ( sizeof( PVOID ) * 2 );
+
+    if ( dwChildrenCount == 0 )
     {
-        pszOutBuffer[0] = '\0';
+        return STATUS_NOT_FOUND;
+    }
+
+    if ( !pvChildrenStart || !pvChildrenEnd || pvChildrenStart >= pvChildrenEnd )
+    {
+        return STATUS_NOT_FOUND;
+    }
+
+    lStatus = RobloxBatchGetChildren(
+        hRoblox,
+        pvChildrenStart,
+        &pChildrenBuff,
+        dwChildrenCount
+    );
+
+    if ( !NT_SUCCESS( lStatus ) || !pChildrenBuff )
+    {
+        return lStatus;
+    }
+
+    for ( DWORD i = 0; i < dwChildrenCount; i++ )
+    {
+        CHAR    szName[ROBLOX_STRING_MAX_LEN + 1]   = { 0 };
+
+        pvChild = *(PVOID*)( (DWORD64)pChildrenBuff + ( i * sizeof( PVOID ) * 2 ) );
         
-        return STATUS_SUCCESS;
+        if ( !pvChild )
+        {
+            continue;
+        }
+
+        lStatus = RobloxReadName(
+            hRoblox,
+            pvChild,
+            dwNameOffset,
+            sizeof( szName ),
+            szName
+        );
+
+        if ( !NT_SUCCESS( lStatus ) )
+        {
+            continue;
+        }
+
+        if ( strncmp(
+            szName,
+            pszName,
+            strlen( pszName )
+        ) == 0 )
+        {
+            *ppvChildOut = pvChild;
+            
+            (VOID)VirtualFree(
+                pChildrenBuff,
+                0,
+                MEM_RELEASE
+            );
+            
+            return STATUS_SUCCESS;
+        }
     }
 
-    if ( sRbxString.dwStringLen > ROBLOX_STRING_MAX_LEN )
-    {
-        /*
-            Should never happen if process is suspended.
-        */
+    (VOID)VirtualFree(
+        pChildrenBuff,
+        0,
+        MEM_RELEASE
+    );
 
-        return STATUS_INTERNAL_ERROR;
-    }
-
-    if ( sRbxString.dwStringLen <= 15 ) /* sizeof( sRbxString.szString ) - 1 */
-    {
-        /*
-            Short string optimization.
-        */
-
-        return ( StringCchCopyNA(
-            pszOutBuffer,
-            dwBufferSize,
-            sRbxString.szString.szShortString,
-            sRbxString.dwStringLen
-        ) == S_OK ) ? STATUS_SUCCESS : STATUS_BUFFER_TOO_SMALL;
-    }
-
-    pszString = sRbxString.szString.pszLongString;
-
-    if ( !IS_VALID_POINTER( hRoblox, pszString ) )
-    {
-        return STATUS_UNSUCCESSFUL;
-    }
-
-    if ( sRbxString.dwStringLen < dwBufferSize )
-    {
-        szStringSize    = sRbxString.dwStringLen;
-        lStatus         = STATUS_SUCCESS;
-    }
-    else
-    {
-        szStringSize    = dwBufferSize - 1;
-        lStatus         = STATUS_BUFFER_TOO_SMALL;
-    }
-
-    if ( !ReadProcessMemory(
-        hRoblox,
-        (LPCVOID)pszString,
-        pszOutBuffer,
-        szStringSize,
-        NULL
-    ) )
-    {
-        return STATUS_UNSUCCESSFUL;
-    }
-
-#pragma warning(suppress: 6386) /* pszOutBuffer is guaranteed to be at least szStringSize + 1... seriously, MSVC... */
-    pszOutBuffer[szStringSize] = '\0';
-
-    return lStatus;
+    return STATUS_NOT_FOUND;
 }

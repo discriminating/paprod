@@ -2,7 +2,7 @@
 File:       InitDump.C
 Purpose:    Initialization of dump process
 Author:     @discriminating
-Date:       21 December 2025
+Date:       24 December 2025
 */
 
 #include <dumper/InitDump.H>
@@ -150,6 +150,16 @@ PrintOffsets(
     OutputFormat(
         L"#define PLAYER_MODEL_INSTANCE_OFFSET           0x%lx\n",
         psRobloxOffsets->dwModelInstance
+    );
+
+    OutputFormat(
+        L"#define INSTANCE_PRIMITIVE_PTR_OFFSET          0x%lx\n",
+        psRobloxOffsets->dwPrimitive
+    );
+
+    OutputFormat(
+        L"#define PRIMITIVE_CFRAME_OFFSET                0x%lx\n",
+        psRobloxOffsets->dwCFrame
     );
 
     OutputFormat(

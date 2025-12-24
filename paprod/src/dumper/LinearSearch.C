@@ -2,7 +2,7 @@
 File:       LinearSearch.C
 Purpose:    Linear search functions for memory scanning
 Author:     @discriminating
-Date:       23 December 2025
+Date:       24 December 2025
 */
 
 #include <dumper/LinearSearch.H>
@@ -72,7 +72,7 @@ LinearSearchForClass(
 
     if ( dwSearch == ( dwAlignment * dwMaxSearch ) )
     {
-        return STATUS_UNSUCCESSFUL;
+        return STATUS_NOT_FOUND;
     }
 
     *pdwOffsetOut = dwSearch;
@@ -85,7 +85,7 @@ NTSTATUS
 LinearSearchForWorkspace(
     _In_                            HANDLE  hRoblox,
     _In_                            PVOID   pvDataModel,
-    _Outptr_result_nullonfailure_   PVOID*  pvOutWorkspace
+    _Outptr_result_nullonfailure_   PVOID*  pvWorkspaceOut
 )
 {
     PVOID   pvAddress       = 0;
@@ -95,7 +95,7 @@ LinearSearchForWorkspace(
 
     BOOL    bRet            = FALSE;
 
-    if ( !hRoblox || !pvDataModel || !pvOutWorkspace )
+    if ( !hRoblox || !pvDataModel || !pvWorkspaceOut )
     {
         return STATUS_INVALID_PARAMETER;
     }
@@ -133,10 +133,10 @@ LinearSearchForWorkspace(
 
     if ( dwSearch == dwMaxSearch )
     {
-        return STATUS_UNSUCCESSFUL;
+        return STATUS_NOT_FOUND;
     }
 
-    *pvOutWorkspace = pvAddress;
+    *pvWorkspaceOut = pvAddress;
 
     return STATUS_SUCCESS;
 }
@@ -149,7 +149,7 @@ LinearSearchForString(
     _In_z_      CHAR*       szString,
     _In_        DWORD       dwMaxSearch,
     _In_        DWORD       dwAlignment,
-    _Out_       DWORD*      pdwOffsetOut
+    _Out_       DWORD*      pdwStringOffsetOut
 )
 {
     if ( !hRoblox || !pvStart || !szString )
@@ -157,7 +157,7 @@ LinearSearchForString(
         return STATUS_INVALID_PARAMETER;
     }
 
-    if ( !pdwOffsetOut )
+    if ( !pdwStringOffsetOut )
     {
         return STATUS_INVALID_PARAMETER;
     }
@@ -225,13 +225,13 @@ LinearSearchForString(
             szString
         ) == 0 )
         {
-            *pdwOffsetOut = dwSearch;
+            *pdwStringOffsetOut = dwSearch;
 
             return STATUS_SUCCESS;
         }
     }
 
-    return STATUS_UNSUCCESSFUL;
+    return STATUS_NOT_FOUND;
 }
 
 _Success_( return == STATUS_SUCCESS )
@@ -240,10 +240,10 @@ LinearSearchForChildren(
     _In_        HANDLE      hRoblox,
     _In_        PVOID       pvStart,
     _In_        DWORD       dwMaxSearch,
-    _Out_       DWORD*      pdwOffsetOut
+    _Out_       DWORD*      pdwChildrenOffsetOut
 )
 {
-    if ( !hRoblox || !pvStart || !pdwOffsetOut )
+    if ( !hRoblox || !pvStart || !pdwChildrenOffsetOut )
     {
         return STATUS_INVALID_PARAMETER;
     }
@@ -435,13 +435,13 @@ LinearSearchForChildren(
 
         if ( bOkay )
         {
-            *pdwOffsetOut = dwSearch;
+            *pdwChildrenOffsetOut = dwSearch;
             
             return STATUS_SUCCESS;
         }
     }
 
-    return STATUS_UNSUCCESSFUL;
+    return STATUS_NOT_FOUND;
 }
 
 _Success_( return == STATUS_SUCCESS )
@@ -450,10 +450,10 @@ LinearSearchForProjectionViewMatrix(
     _In_        HANDLE      hRoblox,
     _In_        PVOID       pvVisualEngine,
     _In_        DWORD       dwMaxSearch,
-    _Out_       DWORD*      pdwViewMatrixOffset
+    _Out_       DWORD*      pdwViewMatrixOffsetOut
 )
 {
-    if ( !hRoblox || !pvVisualEngine || !pdwViewMatrixOffset )
+    if ( !hRoblox || !pvVisualEngine || !pdwViewMatrixOffsetOut )
     {
         return STATUS_INVALID_PARAMETER;
     }
@@ -488,13 +488,24 @@ LinearSearchForProjectionViewMatrix(
             continue;
         }
 
+        /*
+            [   0.9112     0.0000      -0.4057     -231.5724   ]
+            [   -0.3308    1.1740      -0.7430     221.6931    ]
+            [   0.0000     0.0000      0.0000      0.0997      ]
+            [   -0.3343    -0.5695     -0.7510     267.7311    ]
+        */
+
         if ( fabsf( mViewMatrix.fMatrix[2][0] ) > 0.01f     ||
              fabsf( mViewMatrix.fMatrix[2][1] ) > 0.01f     ||
              fabsf( mViewMatrix.fMatrix[2][2] ) > 0.01f     ||
-             fabsf( mViewMatrix.fMatrix[2][3]   - 0.1f ) > 0.01f )
+             fabsf( mViewMatrix.fMatrix[2][3] - 0.1f ) > 0.01f )
         {
             continue;
         }
+
+        /*
+            NaN check.
+        */
 
         for ( INT i = 0; i < 4; i++ )
         {
@@ -519,12 +530,12 @@ LinearSearchForProjectionViewMatrix(
             continue;
         }
 
-        *pdwViewMatrixOffset = dwSearch;
+        *pdwViewMatrixOffsetOut = dwSearch;
         
         return STATUS_SUCCESS;
     }
 
-    return STATUS_UNSUCCESSFUL;
+    return STATUS_NOT_FOUND;
 }
 
 _Success_( return == STATUS_SUCCESS )
@@ -533,10 +544,10 @@ LinearSearchForViewportSize(
     _In_        HANDLE      hRoblox,
     _In_        PVOID       pvVisualEngine,
     _In_        DWORD       dwMaxSearch,
-    _Out_       DWORD*      pdwViewportSizeOffset
+    _Out_       DWORD*      pdwViewportSizeOffsetOut
 )
 {
-    if ( !hRoblox || !pvVisualEngine || !pdwViewportSizeOffset )
+    if ( !hRoblox || !pvVisualEngine || !pdwViewportSizeOffsetOut )
     {
         return STATUS_INVALID_PARAMETER;
     }
@@ -653,10 +664,181 @@ LinearSearchForViewportSize(
             continue;
         }
 
-        *pdwViewportSizeOffset = dwSearch;
+        *pdwViewportSizeOffsetOut = dwSearch;
         
         return STATUS_SUCCESS;
     }
 
-    return STATUS_UNSUCCESSFUL;
+    return STATUS_NOT_FOUND;
+}
+
+_Success_( return == STATUS_SUCCESS )
+NTSTATUS
+LinearSearchForCFrame(
+    _In_    HANDLE  hRoblox,
+    _In_    PVOID   pvPrimitive,
+    _In_    DWORD   dwMaxSearch,
+    _Out_   DWORD*  pdwCFrameOffsetOut
+)
+{
+    if ( !hRoblox || !pvPrimitive || !pdwCFrameOffsetOut )
+    {
+        return STATUS_INVALID_PARAMETER;
+    }
+
+    for ( DWORD dwSearch = 0; dwSearch < ( sizeof( PVOID ) * dwMaxSearch ); dwSearch += sizeof( PVOID ) )
+    {
+        PVOID       pvAddress       = (PVOID)( (DWORD64)pvPrimitive + dwSearch );
+        
+        CFrame      cfCFrame        = { 0 };
+
+        BOOL        bHasNaN         = FALSE;
+
+        Vector3     v3Right         = { 0 };
+        Vector3     v3Up            = { 0 };
+        Vector3     v3Look          = { 0 };
+
+        FLOAT       fRightLen       = 0.0f;
+        FLOAT       fUpLen          = 0.0f;
+        FLOAT       fLookLen        = 0.0f;
+
+        FLOAT       fRightUpDot     = 0.0f;
+        FLOAT       fRightLookDot   = 0.0f;
+        FLOAT       fUpLookDot      = 0.0f;
+
+        FLOAT       fCrossDiff      = 0.0f;
+
+        Vector3     v3Cross         = { 0 };
+        
+        if ( !ReadProcessMemory(
+            hRoblox,
+            pvAddress,
+            &cfCFrame,
+            sizeof( CFrame ),
+            NULL
+        ) )
+        {
+            continue;
+        }
+
+        /*
+            NaN check.
+        */
+
+        for ( INT i = 0; i < 12; i++ )
+        {
+            if ( !isfinite( ( (FLOAT*)&cfCFrame )[i] ) )
+            {
+                bHasNaN = TRUE;
+                break;
+            }
+        }
+
+        if ( bHasNaN )
+        {
+            continue;
+        }
+
+        /*
+            Extract vectors from column-major matrix.
+        */
+
+        v3Right.X   = cfCFrame.m00;
+        v3Right.Y   = cfCFrame.m01;
+        v3Right.Z   = cfCFrame.m02;
+
+        v3Up.X      = cfCFrame.m10;
+        v3Up.Y      = cfCFrame.m11;
+        v3Up.Z      = cfCFrame.m12;
+
+        v3Look.X    = cfCFrame.m20;
+        v3Look.Y    = cfCFrame.m21;
+        v3Look.Z    = cfCFrame.m22;
+
+        /*
+            Assume player is in reasonable bounds.
+        */
+
+        if ( fabsf( cfCFrame.v3Position.X ) > 100000.0f     ||
+             fabsf( cfCFrame.v3Position.Y ) > 100000.0f     ||
+             fabsf( cfCFrame.v3Position.Z ) > 100000.0f )
+        {
+            continue;
+        }
+
+        /*
+            Unit vector length check.
+        */
+
+        fRightLen = sqrtf(
+            v3Right.X * v3Right.X +
+            v3Right.Y * v3Right.Y +
+            v3Right.Z * v3Right.Z
+        );
+
+        fUpLen = sqrtf(
+            v3Up.X * v3Up.X +
+            v3Up.Y * v3Up.Y +
+            v3Up.Z * v3Up.Z
+        );
+
+        fLookLen = sqrtf(
+            v3Look.X * v3Look.X +
+            v3Look.Y * v3Look.Y +
+            v3Look.Z * v3Look.Z
+        );
+
+        if ( fabsf( fRightLen - 1.0f )  > 0.1f  ||
+             fabsf( fUpLen - 1.0f )     > 0.1f  ||
+             fabsf( fLookLen - 1.0f )   > 0.1f )
+        {
+            continue;
+        }
+
+        /*
+            Orthogonality check.
+        */
+
+        fRightUpDot     =   v3Right.X * v3Up.X +
+                            v3Right.Y * v3Up.Y +
+                            v3Right.Z * v3Up.Z;
+
+        fRightLookDot   =   v3Right.X * v3Look.X +
+                            v3Right.Y * v3Look.Y +
+                            v3Right.Z * v3Look.Z;
+
+        fUpLookDot      =   v3Up.X * v3Look.X +
+                            v3Up.Y * v3Look.Y +
+                            v3Up.Z * v3Look.Z;
+
+        if ( fabsf( fRightUpDot )   > 0.1f  ||
+             fabsf( fRightLookDot ) > 0.1f  ||
+             fabsf( fUpLookDot )    > 0.1f )
+        {
+            continue;
+        }
+
+        /*
+            Verify cross product.
+        */
+
+        v3Cross.X   =   v3Up.Y * v3Look.Z - v3Up.Z * v3Look.Y;
+        v3Cross.Y   =   v3Up.Z * v3Look.X - v3Up.X * v3Look.Z;
+        v3Cross.Z   =   v3Up.X * v3Look.Y - v3Up.Y * v3Look.X;
+
+        fCrossDiff  =   fabsf( v3Cross.X - v3Right.X ) +
+                        fabsf( v3Cross.Y - v3Right.Y ) +
+                        fabsf( v3Cross.Z - v3Right.Z );
+
+        if ( fCrossDiff > 0.2f )
+        {
+            continue;
+        }
+
+        *pdwCFrameOffsetOut = dwSearch;
+
+        return STATUS_SUCCESS;
+    }
+
+    return STATUS_NOT_FOUND;
 }

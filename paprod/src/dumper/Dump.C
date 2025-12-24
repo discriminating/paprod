@@ -2,7 +2,7 @@
 File:       Dump.C
 Purpose:    Functions to dump Roblox offsets
 Author:     @discriminating
-Date:       22 December 2025
+Date:       24 December 2025
 */
 
 #include <dumper/Dump.H>
@@ -132,13 +132,15 @@ DumpOffsets(
     PVOID           pvVisualEngine          = 0x0;
     PVOID           pvPlayers               = 0x0;
 
-    PVOID           pvFirstPlayer           = 0x0;
-
     PVOID           pvClassDescriptor       = 0x0;
 
-    CHAR    szTempName[ ROBLOX_STRING_MAX_LEN + 1 ]     = { 0 };
+    PVOID           pvFirstPlayer                       = 0x0;
+    PVOID           pvFirstPlayerModelInstance          = 0x0;
+    PVOID           pvFirstPlayerHead                   = 0x0;
 
-    //ROBLOX_OFFSETS      sRobloxOffsets          = { 0 };
+    PVOID           pvHeadPrimitive         = 0x0;
+
+    CHAR    szTempName[ ROBLOX_STRING_MAX_LEN + 1 ]     = { 0 };
 
     ZeroMemory(
         psRobloxOffsets,
@@ -351,7 +353,7 @@ lblSkipClassDescriptorName:
         return FALSE;
     }
 
-    lStatus = RobloxReadString(
+    lStatus = RobloxReadName(
         hRoblox,
         pvDataModel,
         psRobloxOffsets->dwInstanceName,
@@ -386,19 +388,12 @@ lblSkipClassDescriptorName:
         /*
             Studio is a bit more ambiguous...
 
-            Focus on client from now on.
+            There's no reliable way to determine
+            whether a player is inside a game in
+            Studio or not. Assume they are.
         */
 
-        MessageBoxW(
-            NULL,
-            L"Please use the Roblox Client to get more offsets.",
-            L"Roblox Offset Dumper",
-            MB_OK | MB_ICONINFORMATION
-        );
-
-        bRet = TRUE;
-
-        goto lblExit;
+        bIsInGame = TRUE;
     }
 
     if ( !bIsInGame )
@@ -429,6 +424,13 @@ lblSkipClassDescriptorName:
                 L"Warning: Failed to find ViewportSize offset (0x%08X).\n",
                 lStatus
             );
+
+            if ( !bIsUsingClient )
+            {
+                OutputFormat(
+                    L"Info: You need to use the client for this offset.\n"
+                );
+            }
         }
     }
 
@@ -487,6 +489,17 @@ lblSkipClassDescriptorName:
             lStatus
         );
 
+        if ( !bIsUsingClient )
+        {
+            MessageBoxA(
+                NULL,
+                "It seems you're using Studio. Please make sure you are actually "
+                "inside a game, and not just in the editor.",
+                "Roblox Offset Dumper",
+                MB_ICONINFORMATION | MB_OK
+            );
+        }
+
         goto lblFail;
     }
 
@@ -516,6 +529,121 @@ lblSkipClassDescriptorName:
         );
 
         goto lblFail;
+    }
+
+    /*
+        Get the first player's model instance.
+    */
+
+    if ( !ReadProcessMemory(
+        hRoblox,
+        (LPCVOID)( (DWORD64)pvFirstPlayer + psRobloxOffsets->dwModelInstance ),
+        &pvFirstPlayerModelInstance,
+        sizeof( PVOID ),
+        NULL
+    ) )
+    {
+        OutputFormat(
+            L"Error: Failed to read first player's model instance.\n",
+            lStatus
+        );
+
+        goto lblFail;
+    }
+
+    /*
+        Get the first player's head.
+    */
+
+    lStatus = RobloxFindFirstChildOfName(
+        hRoblox,
+        pvFirstPlayerModelInstance,
+        psRobloxOffsets->dwChildren,
+        psRobloxOffsets->dwInstanceName,
+        "Head",
+        &pvFirstPlayerHead
+    );
+
+    if ( !NT_SUCCESS( lStatus ) || !pvFirstPlayerHead )
+    {
+        OutputFormat(
+            L"Error: Failed to get first player's head. (0x%08X).\n",
+            lStatus
+        );
+
+        goto lblFail;
+    }
+
+    OutputFormat(
+        L"Ok: Found first player's head instance at address: 0x%p.\n",
+        pvFirstPlayerHead
+    );
+
+    /*
+        Instance->Primitive
+    */
+
+    lStatus = LinearSearchForClass(
+        hRoblox,
+        pvFirstPlayerHead,
+        ".?AVPrimitive@RBX@@",
+        PRIMITIVE_SEARCH_DEPTH,
+        sizeof( PVOID ),
+        &psRobloxOffsets->dwPrimitive
+    );
+
+    if ( !NT_SUCCESS( lStatus ) || !psRobloxOffsets->dwPrimitive )
+    {
+        OutputFormat(
+            L"Error: Failed to get critical offset Instance->Primitive. (0x%08X).\n",
+            lStatus
+        );
+
+        goto lblFail;
+    }
+
+    /*
+        Get the head's primitive.
+    */
+
+    if ( !ReadProcessMemory(
+        hRoblox,
+        (LPCVOID)( (DWORD64)pvFirstPlayerHead + psRobloxOffsets->dwPrimitive ),
+        &pvHeadPrimitive,
+        sizeof( PVOID ),
+        NULL
+    ) )
+    {
+        OutputFormat(
+            L"Error: Failed to read head primitive.\n",
+            lStatus
+        );
+
+        goto lblFail;
+    }
+
+    OutputFormat(
+        L"Ok: Found first player's head's primitive at address: 0x%p\n",
+        pvHeadPrimitive
+    );
+
+    /*
+        Primitive->CFrame
+    */
+
+    lStatus = LinearSearchForCFrame(
+        hRoblox,
+        pvHeadPrimitive,
+        CFRAME_SEARCH_DEPTH,
+        &psRobloxOffsets->dwCFrame
+    );
+
+    if ( !NT_SUCCESS( lStatus ) || !psRobloxOffsets->dwCFrame )
+    {
+        OutputFormat(
+            L"Warning: Failed to get offset Primitive->CFrame.\n",
+            lStatus
+        );
     }
 
     bRet = TRUE;
