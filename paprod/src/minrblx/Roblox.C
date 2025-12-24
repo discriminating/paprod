@@ -2,7 +2,7 @@
 File:       Roblox.C
 Purpose:    Functions to interact with Roblox client
 Author:     @discriminating
-Date:       22 December 2025
+Date:       23 December 2025
 */
 
 #include <minrblx/Roblox.H>
@@ -11,9 +11,9 @@ _Success_( return == STATUS_SUCCESS )
 NTSTATUS
 WINAPI
 RobloxGetRenderView(
-    _In_                                        HANDLE      hRoblox,
-    _In_                                        BOOL        bFastScan,
-    _Outptr_result_nullonfailure_   __restrict  PVOID*      ppvRenderViewOut
+    _In_                            HANDLE      hRoblox,
+    _In_                            BOOL        bFastScan,
+    _Outptr_result_nullonfailure_   PVOID*      ppvRenderViewOut
 )
 {
     DWORD64                     dwAddress       = PAGE_SIZE;
@@ -98,10 +98,8 @@ RobloxGetRenderView(
             szBufferSz = mbiInfo.RegionSize;
         }
 
-#pragma warning(push)
-#pragma warning(disable: 6387) /* Dumb linter... */
+#pragma warning(suppress: 6387) /* Dumb linter... */
         bResult = ReadProcessMemory(
-#pragma warning(pop)
             hRoblox,
             (LPCVOID)dwAddress,
             pBuffer,
@@ -175,7 +173,7 @@ RobloxGetRenderView(
 
             if ( pBuffer )
             {
-                (VOID) VirtualFree(
+                (VOID)VirtualFree(
                     pBuffer,
                     0,
                     MEM_RELEASE
@@ -190,7 +188,7 @@ RobloxGetRenderView(
 
     if ( pBuffer )
     {
-        (VOID) VirtualFree(
+        (VOID)VirtualFree(
             pBuffer,
             0,
             MEM_RELEASE
@@ -203,9 +201,9 @@ RobloxGetRenderView(
 _Success_( return == STATUS_SUCCESS )
 NTSTATUS
 RobloxGetDataModel(
-    _In_                                        HANDLE      hRoblox,
-    _In_                                        PVOID       pvRenderView,
-    _Outptr_result_nullonfailure_   __restrict  PVOID*      ppvDataModelOut
+    _In_                            HANDLE      hRoblox,
+    _In_                            PVOID       pvRenderView,
+    _Outptr_result_nullonfailure_   PVOID*      ppvDataModelOut
 )
 {
     DWORD64         dwAddress                   = 0;
@@ -405,11 +403,11 @@ RobloxBatchGetChildren(
 _Success_( return == STATUS_SUCCESS )
 NTSTATUS
 RobloxFindFirstChildOfRTTIClass(
-    _In_                                        HANDLE      hRoblox,
-    _In_                                        PVOID       pvInstance,
-    _In_                                        DWORD       dwChildrenOffset,
-    _In_                                        PCSTR       pszRTTIClassName,
-    _Outptr_result_nullonfailure_   __restrict  PVOID*      ppvChildOut
+    _In_                            HANDLE      hRoblox,
+    _In_                            PVOID       pvInstance,
+    _In_                            DWORD       dwChildrenOffset,
+    _In_                            PCSTR       pszRTTIClassName,
+    _Outptr_result_nullonfailure_   PVOID*      ppvChildOut
 )
 {
     if ( !hRoblox || !pvInstance || !pszRTTIClassName || !ppvChildOut )
@@ -541,11 +539,11 @@ RobloxFindFirstChildOfRTTIClass(
 _Success_( return == STATUS_SUCCESS )
 NTSTATUS
 RobloxReadString(
-    _In_                            HANDLE          hRoblox,
-    _In_                            PVOID           pvInstance,
-    _In_                            DWORD           dwStringOffset,
-    _In_                            DWORD           dwBufferSize,
-    _Out_writes_z_( dwBufferSize )  PCHAR           pszOutBuffer
+    _In_                            HANDLE      hRoblox,
+    _In_                            PVOID       pvInstance,
+    _In_                            DWORD       dwStringOffset,
+    _In_                            DWORD       dwBufferSize,
+    _Out_writes_z_( dwBufferSize )  PCHAR       pszOutBuffer
 )
 {
     ROBLOX_STRING       sRbxString      = { 0 };

@@ -20,9 +20,9 @@ LinearSearchForClass(
 _Success_( return == STATUS_SUCCESS )
 NTSTATUS
 LinearSearchForWorkspace(
-    _In_                                        HANDLE  hRoblox,
-    _In_                                        PVOID   pvDataModel,
-    _Outptr_result_nullonfailure_   __restrict  PVOID*  pvOutWorkspace
+    _In_                            HANDLE  hRoblox,
+    _In_                            PVOID   pvDataModel,
+    _Outptr_result_nullonfailure_   PVOID*  pvOutWorkspace
 );
 
 _Success_( return == STATUS_SUCCESS )

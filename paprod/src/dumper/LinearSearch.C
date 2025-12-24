@@ -2,7 +2,7 @@
 File:       LinearSearch.C
 Purpose:    Linear search functions for memory scanning
 Author:     @discriminating
-Date:       22 December 2025
+Date:       23 December 2025
 */
 
 #include <dumper/LinearSearch.H>
@@ -83,9 +83,9 @@ LinearSearchForClass(
 _Success_( return == STATUS_SUCCESS )
 NTSTATUS
 LinearSearchForWorkspace(
-    _In_                                        HANDLE  hRoblox,
-    _In_                                        PVOID   pvDataModel,
-    _Outptr_result_nullonfailure_   __restrict  PVOID*  pvOutWorkspace
+    _In_                            HANDLE  hRoblox,
+    _In_                            PVOID   pvDataModel,
+    _Outptr_result_nullonfailure_   PVOID*  pvOutWorkspace
 )
 {
     PVOID   pvAddress       = 0;

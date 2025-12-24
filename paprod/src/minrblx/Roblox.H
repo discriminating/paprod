@@ -23,7 +23,7 @@ typedef struct RBX_ViewportSize
 {
     FLOAT   fWidth;
     FLOAT   fHeight;
-} ViewportSize, * PViewportSize;
+} ViewportSize, *PViewportSize;
 
 /*
     Modified from std string SSO? Maybe...
@@ -45,17 +45,17 @@ _Success_( return == STATUS_SUCCESS )
 NTSTATUS
 WINAPI
 RobloxGetRenderView(
-    _In_                                        HANDLE      hRoblox,
-    _In_                                        BOOL        bFastScan,
-    _Outptr_result_nullonfailure_   __restrict  PVOID*      ppvRenderViewOut
+    _In_                            HANDLE      hRoblox,
+    _In_                            BOOL        bFastScan,
+    _Outptr_result_nullonfailure_   PVOID*      ppvRenderViewOut
 );
 
 _Success_( return == STATUS_SUCCESS )
 NTSTATUS
 RobloxGetDataModel(
-    _In_                                        HANDLE      hRoblox,
-    _In_                                        PVOID       pvRenderView,
-    _Outptr_result_nullonfailure_   __restrict  PVOID*      ppvDataModelOut
+    _In_                            HANDLE      hRoblox,
+    _In_                            PVOID       pvRenderView,
+    _Outptr_result_nullonfailure_   PVOID*      ppvDataModelOut
 );
 
 _Success_( return == STATUS_SUCCESS )
@@ -72,19 +72,19 @@ RobloxBatchGetChildren(
 _Success_( return == STATUS_SUCCESS )
 NTSTATUS
 RobloxFindFirstChildOfRTTIClass(
-    _In_                                        HANDLE      hRoblox,
-    _In_                                        PVOID       pvInstance,
-    _In_                                        DWORD       dwChildrenOffset,
-    _In_                                        PCSTR       pszRTTIClassName,
-    _Outptr_result_nullonfailure_   __restrict  PVOID*      ppvChildOut
+    _In_                            HANDLE      hRoblox,
+    _In_                            PVOID       pvInstance,
+    _In_                            DWORD       dwChildrenOffset,
+    _In_                            PCSTR       pszRTTIClassName,
+    _Outptr_result_nullonfailure_   PVOID*      ppvChildOut
 );
 
 _Success_( return == STATUS_SUCCESS )
 NTSTATUS
 RobloxReadString(
-    _In_                            HANDLE          hRoblox,
-    _In_                            PVOID           pvInstance,
-    _In_                            DWORD           dwStringOffset,
-    _In_                            DWORD           dwBufferSize,
-    _Out_writes_z_( dwBufferSize )  PCHAR           pszOutBuffer
+    _In_                            HANDLE      hRoblox,
+    _In_                            PVOID       pvInstance,
+    _In_                            DWORD       dwStringOffset,
+    _In_                            DWORD       dwBufferSize,
+    _Out_writes_z_( dwBufferSize )  PCHAR       pszOutBuffer
 );

@@ -2,7 +2,7 @@
 File:       RunTimeTypeInformation.C
 Purpose:    Functions related to RTTI
 Author:     @discriminating
-Date:       22 December 2025
+Date:       23 December 2025
 */
 
 #include <rtti/RunTimeTypeInformation.H>
@@ -147,17 +147,18 @@ IsClass(
         return FALSE;
     }
 
-    return strcmp(
+    return strncmp(
         szClassName,
-        szClassNameRead
+        szClassNameRead,
+        TYPE_DESCRIPTOR_NAME_SIZE - 1
     ) == 0;
 }
 
 _Success_( return != 0 )
 BOOL
 IsRobloxClass(
-    _In_    HANDLE          hRoblox,
-    _In_    VOID*           pVirtualAddress
+    _In_        HANDLE          hRoblox,
+    _In_        VOID*           pVirtualAddress
 )
 {
     if ( !hRoblox || !pVirtualAddress)
@@ -165,7 +166,10 @@ IsRobloxClass(
         return FALSE;
     }
 
-    CHAR    szClassNameRead[TYPE_DESCRIPTOR_NAME_SIZE]  = { 0 };
+    CHAR        szClassNameRead[TYPE_DESCRIPTOR_NAME_SIZE]  = { 0 };
+    
+    SIZE_T      nNamespaceLen   = sizeof( "@RBX@@" ) - 1;
+    SIZE_T      nClassNameLen   = 0;
 
     if ( !NT_SUCCESS( GetClass(
         hRoblox,
@@ -177,21 +181,14 @@ IsRobloxClass(
         return FALSE;
     }
 
-    /*
-        Return true if class name ends with @RBX@@
-    */
-
-    SIZE_T          nClassNameLen = strlen( szClassNameRead );
-    SIZE_T          nRBXSuffixLen = sizeof( "@RBX@@" ) - 1;
-
-    if ( nClassNameLen < nRBXSuffixLen )
-    {
-        return FALSE;
-    }
+    nClassNameLen = strnlen(
+        szClassNameRead,
+        TYPE_DESCRIPTOR_NAME_SIZE - 1
+    );
 
     return memcmp(
-        szClassNameRead + ( nClassNameLen - nRBXSuffixLen ),
+        szClassNameRead + ( nClassNameLen - nNamespaceLen ),
         "@RBX@@",
-        nRBXSuffixLen
+        nNamespaceLen
     ) == 0;
 }

@@ -34,6 +34,6 @@ IsClass(
 _Success_( return != 0 )
 BOOL
 IsRobloxClass(
-    _In_    HANDLE          hRoblox,
-    _In_    VOID*           pVirtualAddress
+    _In_        HANDLE          hRoblox,
+    _In_        VOID*           pVirtualAddress
 );
