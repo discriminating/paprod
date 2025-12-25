@@ -398,11 +398,21 @@ lblSkipClassDescriptorName:
 
     if ( !bIsInGame )
     {
-        OutputFormat(
-            L"Error: You are not in-game. Please join a game to get more offsets.\n"
+        MessageBoxA(
+            NULL,
+            "Partially succeeded.\n\nIf you want more offsets, please "
+            "join a game and re-dump.",
+            "Roblox Offset Dumper",
+            MB_ICONINFORMATION | MB_OK
         );
 
-        goto lblFail;
+        OutputFormat(
+            L"Info: You are not in-game. Please join a game to get more offsets.\n"
+        );
+
+        bRet = TRUE;
+
+        goto lblExit;
     }
 
     /*
@@ -497,6 +507,11 @@ lblSkipClassDescriptorName:
                 "inside a game, and not just in the editor.",
                 "Roblox Offset Dumper",
                 MB_ICONINFORMATION | MB_OK
+            );
+
+            OutputFormat(
+                L"Info: It seems you're using Studio. Please make sure you are actually "
+                L"inside a game, and not just in the editor.\n"
             );
         }
 

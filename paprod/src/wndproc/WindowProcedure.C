@@ -69,6 +69,7 @@ WindowProcedureW(
     static HWND     hCheckboxFastScan           = NULL;
 
     static HWND     hButtonDump                 = NULL;
+    static HWND     hButtonHelp                 = NULL;
 
     switch ( uMsg )
     {
@@ -199,6 +200,32 @@ WindowProcedureW(
                 return -1;
             }
 
+            hButtonHelp = CreateWindowW(
+                L"BUTTON",
+                L"Help",
+                WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON,
+                150,
+                70,
+                50,
+                30,
+                hWnd,
+                (HMENU)IDC_BUTTON_HELP,
+                ( (LPCREATESTRUCT)lParam )->hInstance,
+                NULL
+            );
+
+            if ( !hButtonHelp )
+            {
+                MessageBoxW(
+                    hWnd,
+                    L"Failed to create button control.",
+                    L"Error",
+                    MB_OK | MB_ICONERROR
+                );
+
+                return -1;
+            }
+
             g_hRichEditOutput = CreateWindowExW(
                 WS_EX_CLIENTEDGE,
                 L"RICHEDIT50W",
@@ -288,6 +315,22 @@ WindowProcedureW(
                     bUseClient,
                     bSuspend,
                     bUseFastScan
+                );
+
+                return 0;
+            }
+
+            if ( LOWORD( wParam ) == IDC_BUTTON_HELP )
+            {
+                MessageBoxA(
+                    NULL,
+                    "Help\n\n"
+                    "How to dump (all) offsets:\n"
+                    "    1. Join a game on the Roblox client.\n"
+                    "    2. Press Dump Offsets.\n\n"
+                    "Studio is also supported, with limited offsets available.",
+                    "Help",
+                    MB_ICONINFORMATION | MB_OK
                 );
 
                 return 0;
