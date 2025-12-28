@@ -2,7 +2,7 @@
 File:       LinearSearch.C
 Purpose:    Linear search functions for memory scanning
 Author:     @discriminating
-Date:       24 December 2025
+Date:       28 December 2025
 */
 
 #include <dumper/LinearSearch.H>
@@ -638,6 +638,7 @@ LinearSearchForViewportSize(
                 pvAddress,
                 GetLastError()
             );
+
             continue;
         }
         
@@ -839,6 +840,77 @@ LinearSearchForCFrame(
 
         return STATUS_SUCCESS;
     }
+
+    return STATUS_NOT_FOUND;
+}
+
+_Success_( return == STATUS_SUCCESS )
+NTSTATUS
+LinearSearchForFloat(
+    _In_    HANDLE  hRoblox,
+    _In_    PVOID   pvInstance,
+    _In_    FLOAT   fValue,
+    _In_    DWORD   dwMaxSearch,
+    _Out_   DWORD*  pdwOffsetOut
+)
+{
+    if ( !hRoblox || !pvInstance || !pdwOffsetOut )
+    {
+        return STATUS_INVALID_PARAMETER;
+    }
+
+    if ( !isfinite( fValue ) )
+    {
+        return STATUS_INVALID_PARAMETER;
+    }
+
+    PBYTE   pBuffer     = NULL;
+
+    pBuffer = LocalAlloc(
+        LPTR,
+        sizeof( FLOAT ) * dwMaxSearch
+    );
+
+    if ( pBuffer == NULL )
+    {
+        return STATUS_NO_MEMORY;
+    }
+
+    if ( !ReadProcessMemory(
+        hRoblox,
+        pvInstance,
+        pBuffer,
+        sizeof( FLOAT ) * dwMaxSearch,
+        NULL
+    ) )
+    {
+        return STATUS_UNSUCCESSFUL;
+    }
+
+    for ( DWORD dwSearch = 0; dwSearch < ( sizeof( FLOAT ) * dwMaxSearch ); dwSearch += sizeof( FLOAT ) )
+    {
+        FLOAT   pvFloat = *(FLOAT*)(pBuffer + dwSearch);
+
+        if ( !isfinite( pvFloat ) )
+        {
+            continue;
+        }
+
+        if ( fabsf( pvFloat - fValue ) < 0.1f )
+        {
+            (VOID)LocalFree(
+                pBuffer
+            );
+
+            *pdwOffsetOut = dwSearch;
+
+            return STATUS_SUCCESS;
+        }
+    }
+
+    (VOID)LocalFree(
+        pBuffer
+    );
 
     return STATUS_NOT_FOUND;
 }

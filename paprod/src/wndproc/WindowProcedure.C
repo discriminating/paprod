@@ -2,7 +2,7 @@
 File:       WindowProcedure.C
 Purpose:    Window procedure for handling window messages
 Author:     @discriminating
-Date:       21 December 2025
+Date:       28 December 2025
 */
 
 #include <wndproc/WindowProcedure.H>
@@ -326,9 +326,11 @@ WindowProcedureW(
                     NULL,
                     "Help\n\n"
                     "How to dump (all) offsets:\n"
-                    "    1. Join a game on the Roblox client.\n"
-                    "    2. Press Dump Offsets.\n\n"
-                    "Studio is also supported, with limited offsets available.",
+                    "    1. Publish the helper place in ./place/PLACE.RBLX.\n"
+                    "    2. Join the published helper place on the Roblox client.\n"
+                    "    3. Press Dump Offsets.\n\n"
+                    "Please note:\n"
+                    "   Studio is also supported, however the ViewportSize offset is irretrievable.\n",
                     "Help",
                     MB_ICONINFORMATION | MB_OK
                 );

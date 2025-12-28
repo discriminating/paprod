@@ -71,3 +71,13 @@ LinearSearchForCFrame(
     _In_    DWORD   dwMaxSearch,
     _Out_   DWORD*  pdwCFrameOffsetOut
 );
+
+_Success_( return == STATUS_SUCCESS )
+NTSTATUS
+LinearSearchForFloat(
+    _In_    HANDLE  hRoblox,
+    _In_    PVOID   pvInstance,
+    _In_    FLOAT   fValue,
+    _In_    DWORD   dwMaxSearch,
+    _Out_   DWORD*  pdwOffsetOut
+);

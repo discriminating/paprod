@@ -2,7 +2,7 @@
 File:       InitDump.C
 Purpose:    Initialization of dump process
 Author:     @discriminating
-Date:       24 December 2025
+Date:       28 December 2025
 */
 
 #include <dumper/InitDump.H>
@@ -113,53 +113,83 @@ PrintOffsets(
     );
 
     OutputFormat(
-        L"#define INSTANCE_PARENT_PTR_OFFSET             0x%lx\n",
+        L"#define INSTANCE_PARENT_PTR_OFFSET                0x%lx\n",
         psRobloxOffsets->dwParent
     );
 
     OutputFormat(
-        L"#define INSTANCE_CLASS_DESCRIPTOR_PTR_OFFSET   0x%lx\n",
+        L"#define INSTANCE_CLASS_DESCRIPTOR_PTR_OFFSET      0x%lx\n",
         psRobloxOffsets->dwClassDescriptor
     );
 
     OutputFormat(
-        L"#define CLASS_DESCRIPTOR_NAME_PTR_OFFSET       0x%lx\n",
+        L"#define CLASS_DESCRIPTOR_NAME_PTR_OFFSET          0x%lx\n",
         psRobloxOffsets->dwClassDescriptorName
     );
 
     OutputFormat(
-        L"#define INSTANCE_NAME_PTR_OFFSET               0x%lx\n",
+        L"#define INSTANCE_NAME_PTR_OFFSET                  0x%lx\n",
         psRobloxOffsets->dwInstanceName
     );
 
     OutputFormat(
-        L"#define INSTANCE_CHILDREN_PTR_OFFSET           0x%lx\n",
+        L"#define INSTANCE_CHILDREN_PTR_OFFSET              0x%lx\n",
         psRobloxOffsets->dwChildren
     );
 
     OutputFormat(
-        L"#define VISUALENGNE_VIEW_MATRIX_OFFSET         0x%lx\n",
+        L"#define VISUALENGNE_VIEW_MATRIX_OFFSET            0x%lx\n",
         psRobloxOffsets->dwViewMatrix
     );
 
     OutputFormat(
-        L"#define VISUALENGINE_VIEWPORT_SIZE_OFFSET      0x%lx\n",
+        L"#define VISUALENGINE_VIEWPORT_SIZE_OFFSET         0x%lx\n",
         psRobloxOffsets->dwViewportSize
     );
 
     OutputFormat(
-        L"#define PLAYER_MODEL_INSTANCE_OFFSET           0x%lx\n",
+        L"#define PLAYER_MODEL_INSTANCE_OFFSET              0x%lx\n",
         psRobloxOffsets->dwModelInstance
     );
 
     OutputFormat(
-        L"#define INSTANCE_PRIMITIVE_PTR_OFFSET          0x%lx\n",
+        L"#define INSTANCE_PRIMITIVE_PTR_OFFSET             0x%lx\n",
         psRobloxOffsets->dwPrimitive
     );
 
     OutputFormat(
-        L"#define PRIMITIVE_CFRAME_OFFSET                0x%lx\n",
+        L"#define PRIMITIVE_CFRAME_OFFSET                   0x%lx\n",
         psRobloxOffsets->dwCFrame
+    );
+
+    OutputFormat(
+        L"#define HUMANOID_HEALTH_OFFSET                    0x%lx\n",
+        psRobloxOffsets->dwHealth
+    );
+
+    OutputFormat(
+        L"#define HUMANOID_MAX_HEALTH_OFFSET                0x%lx\n",
+        psRobloxOffsets->dwMaxHealth
+    );
+
+    OutputFormat(
+        L"#define HUMANOID_JUMP_POWER_OFFSET                0x%lx\n",
+        psRobloxOffsets->dwJumpPower
+    );
+
+    OutputFormat(
+        L"#define HUMANOID_JUMP_HEIGHT_OFFSET               0x%lx\n",
+        psRobloxOffsets->dwJumpHeight
+    );
+
+    OutputFormat(
+        L"#define HUMANOID_HIP_HEIGHT_OFFSET                0x%lx\n",
+        psRobloxOffsets->dwHipHeight
+    );
+
+    OutputFormat(
+        L"#define HUMANOID_MAX_SLOPE_ANGLE_OFFSET           0x%lx\n",
+        psRobloxOffsets->dwMaxSlopeAngle
     );
 
     OutputFormat(

@@ -2,7 +2,7 @@
 File:       Dump.C
 Purpose:    Functions to dump Roblox offsets
 Author:     @discriminating
-Date:       24 December 2025
+Date:       28 December 2025
 */
 
 #include <dumper/Dump.H>
@@ -139,6 +139,8 @@ DumpOffsets(
     PVOID           pvFirstPlayerHead                   = 0x0;
 
     PVOID           pvHeadPrimitive         = 0x0;
+
+    PVOID           pvHumanoid              = 0x0;
 
     CHAR    szTempName[ ROBLOX_STRING_MAX_LEN + 1 ]     = { 0 };
 
@@ -657,6 +659,153 @@ lblSkipClassDescriptorName:
     {
         OutputFormat(
             L"Warning: Failed to get offset Primitive->CFrame.\n",
+            lStatus
+        );
+    }
+
+    /*
+        Get the player's Humanoid.
+    */
+
+    lStatus = RobloxFindFirstChildOfRTTIClass(
+        hRoblox,
+        pvFirstPlayerModelInstance,
+        psRobloxOffsets->dwChildren,
+        ".?AVHumanoid@RBX@@",
+        &pvHumanoid
+    );
+
+    OutputFormat(
+        L"Ok: Found first player's humanoid at address: 0x%p\n",
+        pvHumanoid
+    );
+
+    if ( !NT_SUCCESS( lStatus ) || !pvHumanoid )
+    {
+        OutputFormat(
+            L"Error: Failed to get find player's Humanoid. (0x%08X).\n",
+            lStatus
+        );
+
+        goto lblFail;
+    }
+
+    /*
+        Humanoid->Health
+    */
+
+    lStatus = LinearSearchForFloat(
+        hRoblox,
+        pvHumanoid,
+        HEALTH_VALUE,
+        HUMANOID_SEARCH_DEPTH,
+        &psRobloxOffsets->dwHealth
+    );
+
+    if ( !NT_SUCCESS( lStatus ) || !psRobloxOffsets->dwHealth )
+    {
+        OutputFormat(
+            L"Warning: Failed to get offset Humanoid->Health.\n",
+            lStatus
+        );
+    }
+
+    /*
+        Humanoid->MaxHealth
+    */
+
+    lStatus = LinearSearchForFloat(
+        hRoblox,
+        pvHumanoid,
+        MAX_HEALTH_VALUE,
+        HUMANOID_SEARCH_DEPTH,
+        &psRobloxOffsets->dwMaxHealth
+    );
+
+    if ( !NT_SUCCESS( lStatus ) || !psRobloxOffsets->dwMaxHealth )
+    {
+        OutputFormat(
+            L"Warning: Failed to get offset Humanoid->dwMaxHealth.\n",
+            lStatus
+        );
+    }
+
+    /*
+        Humanoid->JumpPower
+    */
+
+    lStatus = LinearSearchForFloat(
+        hRoblox,
+        pvHumanoid,
+        JUMP_POWER_VALUE,
+        HUMANOID_SEARCH_DEPTH,
+        &psRobloxOffsets->dwJumpPower
+    );
+
+    if ( !NT_SUCCESS( lStatus ) || !psRobloxOffsets->dwJumpPower )
+    {
+        OutputFormat(
+            L"Warning: Failed to get offset Humanoid->dwJumpPower.\n",
+            lStatus
+        );
+    }
+
+    /*
+        Humanoid->JumpHeight
+    */
+
+    lStatus = LinearSearchForFloat(
+        hRoblox,
+        pvHumanoid,
+        JUMP_HEIGHT_VALUE,
+        HUMANOID_SEARCH_DEPTH,
+        &psRobloxOffsets->dwJumpHeight
+    );
+
+    if ( !NT_SUCCESS( lStatus ) || !psRobloxOffsets->dwJumpHeight )
+    {
+        OutputFormat(
+            L"Warning: Failed to get offset Humanoid->dwJumpHeight.\n",
+            lStatus
+        );
+    }
+
+    /*
+        Humanoid->HipHeight
+    */
+
+    lStatus = LinearSearchForFloat(
+        hRoblox,
+        pvHumanoid,
+        HIP_HEIGHT_VALUE,
+        HUMANOID_SEARCH_DEPTH,
+        &psRobloxOffsets->dwHipHeight
+    );
+
+    if ( !NT_SUCCESS( lStatus ) || !psRobloxOffsets->dwHipHeight )
+    {
+        OutputFormat(
+            L"Warning: Failed to get offset Humanoid->dwHipHeight.\n",
+            lStatus
+        );
+    }
+
+    /*
+        Humanoid->MaxSlopeAngle
+    */
+
+    lStatus = LinearSearchForFloat(
+        hRoblox,
+        pvHumanoid,
+        MAX_SLOPE_ANGLE_VALUE,
+        HUMANOID_SEARCH_DEPTH,
+        &psRobloxOffsets->dwMaxSlopeAngle
+    );
+
+    if ( !NT_SUCCESS( lStatus ) || !psRobloxOffsets->dwMaxSlopeAngle )
+    {
+        OutputFormat(
+            L"Warning: Failed to get offset Humanoid->dwMaxSlopeAngle.\n",
             lStatus
         );
     }

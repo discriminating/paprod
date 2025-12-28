@@ -9,6 +9,15 @@
 #define PRIMITIVE_SEARCH_DEPTH                  170
 #define CFRAME_SEARCH_DEPTH                     50
 
+#define HUMANOID_SEARCH_DEPTH                   200
+
+#define MAX_HEALTH_VALUE                        102.0f
+#define HEALTH_VALUE                            101.0f
+#define JUMP_POWER_VALUE                        50.0f
+#define JUMP_HEIGHT_VALUE                       7.2f
+#define HIP_HEIGHT_VALUE                        2.225f
+#define MAX_SLOPE_ANGLE_VALUE                   89.0f
+
 typedef struct _ROBLOX_OFFSETS
 {
     /*
@@ -30,9 +39,14 @@ typedef struct _ROBLOX_OFFSETS
     DWORD   dwModelInstance;
     DWORD   dwPrimitive;
     DWORD   dwCFrame;
-    /*DWORD   dwHumanoid;*/
-    /*DWORD   dwHealth;*/
-    /*DWORD   dwMaxHealth;*/
+    
+    /*DWORD   dwGameID;*/
+    DWORD   dwHealth;
+    DWORD   dwMaxHealth;
+    DWORD   dwJumpPower;
+    DWORD   dwJumpHeight;
+    DWORD   dwHipHeight;
+    DWORD   dwMaxSlopeAngle;
 } ROBLOX_OFFSETS, *PROBLOX_OFFSETS;
 
 _Success_( return != 0 )
