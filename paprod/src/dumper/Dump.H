@@ -17,6 +17,7 @@
 #define JUMP_HEIGHT_VALUE                       7.2f
 #define HIP_HEIGHT_VALUE                        2.225f
 #define MAX_SLOPE_ANGLE_VALUE                   89.0f
+#define WALK_SPEED_VALUE                         16.0f
 
 typedef struct _ROBLOX_OFFSETS
 {
@@ -47,6 +48,7 @@ typedef struct _ROBLOX_OFFSETS
     DWORD   dwJumpHeight;
     DWORD   dwHipHeight;
     DWORD   dwMaxSlopeAngle;
+    DWORD   dwWalkSpeed;
 } ROBLOX_OFFSETS, *PROBLOX_OFFSETS;
 
 _Success_( return != 0 )

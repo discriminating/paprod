@@ -2,7 +2,7 @@
 File:       InitDump.C
 Purpose:    Initialization of dump process
 Author:     @discriminating
-Date:       28 December 2025
+Date:       31 December 2025
 */
 
 #include <dumper/InitDump.H>
@@ -190,6 +190,11 @@ PrintOffsets(
     OutputFormat(
         L"#define HUMANOID_MAX_SLOPE_ANGLE_OFFSET           0x%lx\n",
         psRobloxOffsets->dwMaxSlopeAngle
+    );
+
+    OutputFormat(
+        L"#define HUMANOID_WALK_SPEED_OFFSET                0x%lx\n",
+        psRobloxOffsets->dwWalkSpeed
     );
 
     OutputFormat(

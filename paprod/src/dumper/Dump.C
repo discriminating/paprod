@@ -2,7 +2,7 @@
 File:       Dump.C
 Purpose:    Functions to dump Roblox offsets
 Author:     @discriminating
-Date:       28 December 2025
+Date:       31 December 2025
 */
 
 #include <dumper/Dump.H>
@@ -683,7 +683,7 @@ lblSkipClassDescriptorName:
     if ( !NT_SUCCESS( lStatus ) || !pvHumanoid )
     {
         OutputFormat(
-            L"Error: Failed to get find player's Humanoid. (0x%08X).\n",
+            L"Error: Failed to get find player's Humanoid: 0x%08X.\n",
             lStatus
         );
 
@@ -705,7 +705,7 @@ lblSkipClassDescriptorName:
     if ( !NT_SUCCESS( lStatus ) || !psRobloxOffsets->dwHealth )
     {
         OutputFormat(
-            L"Warning: Failed to get offset Humanoid->Health.\n",
+            L"Warning: Failed to get offset Humanoid->Health: 0x%08X.\n",
             lStatus
         );
     }
@@ -725,7 +725,7 @@ lblSkipClassDescriptorName:
     if ( !NT_SUCCESS( lStatus ) || !psRobloxOffsets->dwMaxHealth )
     {
         OutputFormat(
-            L"Warning: Failed to get offset Humanoid->dwMaxHealth.\n",
+            L"Warning: Failed to get offset Humanoid->dwMaxHealth: 0x%08X.\n",
             lStatus
         );
     }
@@ -745,7 +745,7 @@ lblSkipClassDescriptorName:
     if ( !NT_SUCCESS( lStatus ) || !psRobloxOffsets->dwJumpPower )
     {
         OutputFormat(
-            L"Warning: Failed to get offset Humanoid->dwJumpPower.\n",
+            L"Warning: Failed to get offset Humanoid->dwJumpPower: 0x%08X.\n",
             lStatus
         );
     }
@@ -765,7 +765,7 @@ lblSkipClassDescriptorName:
     if ( !NT_SUCCESS( lStatus ) || !psRobloxOffsets->dwJumpHeight )
     {
         OutputFormat(
-            L"Warning: Failed to get offset Humanoid->dwJumpHeight.\n",
+            L"Warning: Failed to get offset Humanoid->dwJumpHeight: 0x%08X.\n",
             lStatus
         );
     }
@@ -785,7 +785,7 @@ lblSkipClassDescriptorName:
     if ( !NT_SUCCESS( lStatus ) || !psRobloxOffsets->dwHipHeight )
     {
         OutputFormat(
-            L"Warning: Failed to get offset Humanoid->dwHipHeight.\n",
+            L"Warning: Failed to get offset Humanoid->dwHipHeight: 0x%08X.\n",
             lStatus
         );
     }
@@ -805,7 +805,27 @@ lblSkipClassDescriptorName:
     if ( !NT_SUCCESS( lStatus ) || !psRobloxOffsets->dwMaxSlopeAngle )
     {
         OutputFormat(
-            L"Warning: Failed to get offset Humanoid->dwMaxSlopeAngle.\n",
+            L"Warning: Failed to get offset Humanoid->dwMaxSlopeAngle: 0x%08X.\n",
+            lStatus
+        );
+    }
+
+    /*
+        Humanoid->WalkSpeed
+    */
+
+    lStatus = LinearSearchForFloat(
+        hRoblox,
+        pvHumanoid,
+        WALK_SPEED_VALUE,
+        HUMANOID_SEARCH_DEPTH,
+        &psRobloxOffsets->dwWalkSpeed
+    );
+
+    if ( !NT_SUCCESS( lStatus ) || !psRobloxOffsets->dwWalkSpeed )
+    {
+        OutputFormat(
+            L"Warning: Failed to get offset Humanoid->WalkSpeed: 0x%08X.\n",
             lStatus
         );
     }
