@@ -884,6 +884,10 @@ LinearSearchForFloat(
         NULL
     ) )
     {
+        (VOID)LocalFree(
+            pBuffer
+        );
+
         return STATUS_UNSUCCESSFUL;
     }
 
